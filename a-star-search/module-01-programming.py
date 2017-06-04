@@ -1,5 +1,7 @@
+import copy
+import sys
 
-
+[(1, 0), (1, 0), (1, 0), (1, 0), (0, 1), (1, 0), (1, 0), (0, -1), (1, 0), (1, 0), (1, 0), (1, 0), (1, 0), (1, 0), (1, 0), (1, 0)]
 
 full_world = [
   ['.', '.', '.', '.', '.', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.'], 
@@ -42,8 +44,9 @@ test_world = [
 ]
 
 
+#cardinal_moves = [(0,-2), (2,0), (0,2), (-2,0)]
+#cardinal_moves = [(1,1)]
 cardinal_moves = [(0,-1), (1,0), (0,1), (-1,0)]
-
 
 costs = { '.': 1, '*': 3, '#': 5, '~': 7}
 
@@ -91,9 +94,10 @@ def insert_into_frontier(heuristic, state, previous_state, world, goal, frontier
         existing_fn = states[state][0]
         if existing_fn < fn:
             return
-        else:
-            #TODO what to do...
-            pass
+        else: #new fn is lower than existing fn in the frontier
+            #remove the current state from the frontier
+            #then continue as normal, inserting new state into the priority queue
+            frontier.remove(state)
     
     for i in range(len(frontier)):
         existing_state = frontier[i]
@@ -116,12 +120,17 @@ def is_valid(state, world):
     y = state[1]
     
     world_depth = len(world)
-    world_width = len(world[0])
+    if x < 0 or x >= world_depth:
+        return False
+        
+    world_width = len(world[x])
+    if y < 0 or y >= world_width:
+        return False
     
-    if x >= 0 and y >= 0 and x < world_depth and y < world_width:
-        if world[x][y] == 'x':
-            return False
-        return True
+    if world[x][y] == 'x':
+        return False
+    
+    return True
 
 
 
@@ -129,8 +138,8 @@ def get_successors(state, world, moves):
     next_moves = []
         
     for move in moves:
-        x = state[0] + move[0]
-        y = state[1] + move[1]
+        x = state[0] + move[1]
+        y = state[1] + move[0]
         
         new_state = (x,y)
         
@@ -138,20 +147,75 @@ def get_successors(state, world, moves):
             next_moves.append(new_state)
     
     return next_moves
-    
+
 
 #TODO this is pseudocode    
 def construct_path(goal, states):
+    path_coordinates = []
     path = []
     current = goal
     
     while current:
-        path.insert(0, current)
+        path_coordinates.insert(0, current)
         current = states[current][2]
+
+    num_steps = len(path_coordinates)
+    for i in range(num_steps):
+        current_point = path_coordinates[i]
         
+        if i < num_steps - 1:
+            next_point = path_coordinates[i + 1]
+        
+            xDiff = next_point[1] - current_point[1]
+            yDiff = next_point[0] - current_point[0]
+        
+            path.append((xDiff, yDiff))   
     
-    print 'path: ', path 
+    print 'path coordinates: ', path_coordinates
+       
     return path
+
+
+def print_world(world):
+    for row in world:
+        for col in row:
+            sys.stdout.write(col)
+        print
+
+
+def get_path_symbol(step):
+    if step[0] > 0:
+        return '>'
+    
+    if step[0] < 0:
+        return '<'
+    
+    if step[1] > 0:
+        return 'v'
+        
+    if step[1] < 0:
+        return '^'         
+
+def pretty_print_solution(world, path, start):
+    start = (start[1], start[0])
+    world_copy = copy.deepcopy(world)
+    
+    world_copy[start[0]]
+    
+    current_location = start
+    
+    for step in path:
+        symbol = get_path_symbol(step)
+        
+        world_copy[current_location[0]][current_location[1]] = symbol
+        
+        current_location0 = current_location[0] + step[1]
+        current_location1 = current_location[1] + step[0]
+        
+        current_location = (current_location0, current_location1)
+        
+    world_copy[current_location[0]][current_location[1]] = 'G'   
+    print_world(world_copy)
         
 
 def a_star_search(world, start, goal, costs, moves, heuristic):
@@ -159,67 +223,48 @@ def a_star_search(world, start, goal, costs, moves, heuristic):
     explored = []
     path = []
     
+    start = (start[1], start[0])
+    goal = (goal[1], goal[0])
+    
     states = { start: [0, heuristic(start, goal), None] } #f(n), cost so far, parent
     
     frontier.append(start)
 
     while frontier: 
-        #print 'frontier: ', frontier       
         current_state = frontier.pop(0) 
-        
-        #print 'current_state: ', str(current_state)
-        
+                
         if current_state == goal:
-            #print 'goal: ', goal
-            #print 'explored: ', explored
             return construct_path(current_state, states)
         
         children = get_successors(current_state, world, moves)
-        #print 'children', children
                 
         for child in children:
             if child not in explored:
                 insert_into_frontier(heuristic, child, current_state, world, goal, frontier, states)  #this needs to check if already in frontier
         
         explored.append(current_state)
-        #print
     
-    print 'No solution found'
     return []
 
 
-#LEFT OFF TESTING IF THIS GETS CORRECT RESULT
-#a_star_search(full_world, (0,0), (0,14), costs, cardinal_moves, heuristic)
-a_star_search(full_world, (0,0), (14,0), costs, cardinal_moves, heuristic)
+test_path = a_star_search( test_world, (1, 0), (5, 6), costs, cardinal_moves, heuristic)
+print test_path
+
+pretty_print_solution( test_world, test_path, (1, 0))
+
+'''
+full_path = a_star_search( full_world, (0, 0), (26, 26), costs, cardinal_moves, heuristic)
+print full_path
+
+pretty_print_solution( full_world, full_path, (0, 0))
+'''
+
+
+#TODO: make sure jupyter is executing in 2.7
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''    for f in frontier:
-        print f
-    print
-
-frontier = []
-s1 = [(0,0), 5, 1]  
-s2 = [(0,1), 4, 3]
-s3 = [(0,2), 4, 3]  
-insert_into_frontier(heuristic, s1, None, test_world, (3,3), frontier)
-insert_into_frontier(heuristic, s2, s1, test_world, (3,3), frontier)
-insert_into_frontier(heuristic, s3, s2, test_world, (3,3), frontier)'''
-
+#TODO: read professor's functional programming docs
 
 
 
