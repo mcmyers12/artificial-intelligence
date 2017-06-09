@@ -149,7 +149,6 @@ def get_successors(state, world, moves):
     return next_moves
 
 
-#TODO this is pseudocode    
 def construct_path(goal, states):
     path_coordinates = []
     path = []
