@@ -3,7 +3,6 @@ from IPython.core.display import *
 
 
 
-
 prisoners_dilemma = [
  [( -5, -5), (-1,-10)],
  [(-10, -1), (-2, -2)]]
@@ -12,6 +11,8 @@ bars = [
  [ (10, 10), (14, 12), (14, 15) ],
  [ (12, 14), (20, 20), (28, 15) ],
  [ (15, 14), (15, 28), (25, 25) ] ]
+
+
 
 def remove_column(game, column):
     for row in game:
@@ -31,7 +32,20 @@ def flip_game(game):
         flipped_game.append(column)
             
     return flipped_game
+    
 
+def get_strategy_indices(game):
+    strategy_indices = []
+    for i in range(len(game)):
+        row = game[i]
+        strategy_row = []
+        for j in range(len(row)):
+            strategy_row.append((i, j))
+    
+        strategy_indices.append(strategy_row)
+    
+    return strategy_indices
+        
 
 def switch_player(player):
     if player == 0:
@@ -45,15 +59,15 @@ def check_for_one_cell(game):
         return True
     return False
     
-def print_game(game):
+def print_matrix(game):
     print 'game:'
     for row in game:
         print row
 
 
-def remove_strongly_dominated_strategy_player_1(game):
+def remove_strongly_dominated_strategy_player_1(game, strategy_indices):
     print '\n\nremove_strongly_dominated_strategy_player_1'
-    print_game(game)
+    print_matrix(game)
         
     for i in range(len(game) - 1):
         strategy1 = game[i]
@@ -76,21 +90,22 @@ def remove_strongly_dominated_strategy_player_1(game):
             if one_dominates_two:
                 print 'one_dominates_two'
                 game.pop(j)
-                return game
+                strategy_indices.pop(j)
+                return True
             
             if two_dominates_one:
                 print 'two_dominates_one'
                 game.pop(i)
-                return game
+                strategy_indices.pop(i)
+                return True
     
-    print 'no dominated strategy'
-    return game
+    print 'no strongly dominated strategy'
+    return False
 
 
-
-def remove_strongly_dominated_strategy_player_2(game):
+def remove_strongly_dominated_strategy_player_2(game, strategy_indices):
     print '\n\nremove_strongly_dominated_strategy_player_2'
-    print_game(game)
+    print_matrix(game)
     
     flipped_game = flip_game(game)
     for i in range(len(flipped_game) - 1):
@@ -114,30 +129,164 @@ def remove_strongly_dominated_strategy_player_2(game):
             if one_dominates_two:
                 print 'one_dominates_two'
                 remove_column(game, j)
-                return game
+                remove_column(strategy_indices, j)
+                return True
             
             if two_dominates_one:
                 print 'two_dominates_one'
                 remove_column(game, i)
-                return game
+                remove_column(strategy_indices, i)
+                return True
+    
+    print 'no strongly dominated strategy'
+    return False
+
+
+def remove_weakly_dominated_strategy_player_1(game, strategy_indices):
+    print '\n\nremove_weakly_dominated_strategy_player_1'
+    print_matrix(game)
+        
+    for i in range(len(game) - 1):
+        strategy1 = game[i]
+        print 'strategy1', strategy1
+        
+        for j in range(len(game) - 1):
+            j += 1
+            strategy2 = game[j]
+
+            print '\tstrategy2', strategy2
+            
+            one_dominates_two = True 
+            one_greater_flag = False
+            
+            two_dominates_one = True
+            two_greater_flag = False
+            
+            equal_flag = False
+            
+            for k in range(len(strategy1) - 1):
+                value1 = strategy1[k][0]
+                value2 = strategy2[k][0]
+                one_dominates_two &= value1 >= value2 
+                two_dominates_one &= value2 >= value1
+                
+                if (value1 > value2):
+                    one_greater_flag = True
+                    
+                if (value2 > value1):
+                    two_greater_flag = True
+                    
+                if (value1 == value2):
+                    equal_flag = True
+                
+            if one_dominates_two and one_greater_flag and equal_flag:
+                print 'one_dominates_two'
+                game.pop(j)
+                strategy_indices.pop(j)
+                return True
+            
+            if two_dominates_one and two_greater_flag and equal_flag:
+                print 'two_dominates_one'
+                game.pop(i)
+                strategy_indices.pop(i)
+                return True
     
     print 'no dominated strategy'
-    return game  
+    return False
+
+
+def remove_weakly_dominated_strategy_player_2(game, strategy_indices):
+    print '\n\nremove_weakly_dominated_strategy_player_2'
+    print_matrix(game)
+    
+    flipped_game = flip_game(game)
+    for i in range(len(flipped_game) - 1):
+        strategy1 = flipped_game[i]
+        print 'strategy1', strategy1
+        
+        for j in range(len(flipped_game) - 1):
+            j += 1
+            strategy2 = flipped_game[j]
+
+            print '\tstrategy2', strategy2
+            
+            one_dominates_two = True 
+            one_greater_flag = False
+            
+            two_dominates_one = True
+            two_greater_flag = False
+            
+            equal_flag = False
+            
+            for k in range(len(strategy1) - 1):
+                value1 = strategy1[k][0]
+                value2 = strategy2[k][0]
+                one_dominates_two &= value1 >= value2 
+                two_dominates_one &= value2 >= value1
+                
+                if (value1 > value2):
+                    one_greater_flag = True
+                    
+                if (value2 > value1):
+                    two_greater_flag = True
+                    
+                if (value1 == value2):
+                    equal_flag = True
+                
+            if one_dominates_two and one_greater_flag and equal_flag:
+                print 'one_dominates_two'
+                game.pop(j)
+                strategy_indices.pop(j)
+                return True
+            
+            if two_dominates_one and two_greater_flag and equal_flag:
+                print 'two_dominates_one'
+                game.pop(i)
+                strategy_indices.pop(i)
+                return True
+    
+    print 'no strongly dominated strategy'
+    return False
+
+
+def determine_continue_elimination(player_1_strong_removed, player_1_weak_removed, player_2_strong_removed, player_2_weak_removed):
+    continue_elimination = False
+    continue_elimination |= player_1_strong_removed 
+    continue_elimination |= player_1_weak_removed 
+    continue_elimination |= player_2_strong_removed 
+    continue_elimination |= player_2_weak_removed
+        
+    return continue_elimination
 
 
 def solve_game(game, weak=False):
     player = 0
-    if not weak:
-        while not check_for_one_cell(game):
-            remove_strongly_dominated_strategy_player_1(game)
-            player = switch_player(player)
-            remove_strongly_dominated_strategy_player_2(game)
+    strategy_indices = get_strategy_indices(game)
+    continue_elimination = True
+    player_1_weak_removed = False
+    player_2_weak_removed = False
     
-    print '\n\nNash Equilibrium:\n', game
+    print_matrix(strategy_indices)
+    
+    while not check_for_one_cell(game) and continue_elimination:        
+        player_1_strong_removed = remove_strongly_dominated_strategy_player_1(game, strategy_indices)
+        if not player_1_strong_removed and weak:
+            player_1_weak_removed = remove_weakly_dominated_strategy_player_1(game, strategy_indices)
+        
+        player = switch_player(player)
+        
+        player_2_strong_removed = remove_strongly_dominated_strategy_player_2(game, strategy_indices)
+        if not player_2_strong_removed and weak:
+            player_2_weak_removed = remove_weakly_dominated_strategy_player_2(game, strategy_indices)
+            
+        continue_elimination = determine_continue_elimination(player_1_strong_removed, player_1_weak_removed, player_2_strong_removed, player_2_weak_removed)
+    
+    print '\n\nNash Equilibrium:\n', game, '\n', strategy_indices
 
     
-solve_game(bars)
+solve_game(bars, True)
 
 
+#TODO REMOVE PAYOFFS FROM WHAT IS RETURNED
 
 
