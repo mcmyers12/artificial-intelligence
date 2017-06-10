@@ -81,23 +81,28 @@ def remove_strongly_dominated_strategy_player_1(game, strategy_indices):
             
             one_dominates_two = True 
             two_dominates_one = True
-            for k in range(len(strategy1) - 1):
+            for k in range(len(strategy1)):
                 value1 = strategy1[k][0]
                 value2 = strategy2[k][0]
+                print '\t\tvalue1', value1
+                print '\t\tvalue2', value2, '\n'
                 one_dominates_two &= value1 > value2 
                 two_dominates_one &= value2 > value1
                 
             if one_dominates_two:
-                print 'one_dominates_two'
+                print '\tone_dominates_two'
                 game.pop(j)
                 strategy_indices.pop(j)
                 return True
             
             if two_dominates_one:
-                print 'two_dominates_one'
+                print '\ttwo_dominates_one'
                 game.pop(i)
                 strategy_indices.pop(i)
                 return True
+            
+            else:
+                print '\tneither dominates'
     
     print 'no strongly dominated strategy'
     return False
@@ -120,9 +125,11 @@ def remove_strongly_dominated_strategy_player_2(game, strategy_indices):
             
             one_dominates_two = True 
             two_dominates_one = True
-            for k in range(len(strategy1) - 1):
+            for k in range(len(strategy1)):
                 value1 = strategy1[k][1]
                 value2 = strategy2[k][1]
+                print '\t\tvalue1', value1
+                print '\t\tvalue2', value2, '\n'
                 one_dominates_two &= value1 > value2 
                 two_dominates_one &= value2 > value1
                 
@@ -164,9 +171,11 @@ def remove_weakly_dominated_strategy_player_1(game, strategy_indices):
             
             equal_flag = False
             
-            for k in range(len(strategy1) - 1):
+            for k in range(len(strategy1)):
                 value1 = strategy1[k][0]
                 value2 = strategy2[k][0]
+                print '\t\tvalue1', value1
+                print '\t\tvalue2', value2, '\n'
                 one_dominates_two &= value1 >= value2 
                 two_dominates_one &= value2 >= value1
                 
@@ -191,7 +200,7 @@ def remove_weakly_dominated_strategy_player_1(game, strategy_indices):
                 strategy_indices.pop(i)
                 return True
     
-    print 'no dominated strategy'
+    print 'no weakly dominated strategy'
     return False
 
 
@@ -218,9 +227,11 @@ def remove_weakly_dominated_strategy_player_2(game, strategy_indices):
             
             equal_flag = False
             
-            for k in range(len(strategy1) - 1):
-                value1 = strategy1[k][0]
-                value2 = strategy2[k][0]
+            for k in range(len(strategy1)):
+                value1 = strategy1[k][1]
+                value2 = strategy2[k][1]
+                print '\t\tvalue1', value1
+                print '\t\tvalue2', value2, '\n'
                 one_dominates_two &= value1 >= value2 
                 two_dominates_one &= value2 >= value1
                 
@@ -245,7 +256,7 @@ def remove_weakly_dominated_strategy_player_2(game, strategy_indices):
                 strategy_indices.pop(i)
                 return True
     
-    print 'no strongly dominated strategy'
+    print 'no weakly dominated strategy'
     return False
 
 
@@ -281,10 +292,47 @@ def solve_game(game, weak=False):
             
         continue_elimination = determine_continue_elimination(player_1_strong_removed, player_1_weak_removed, player_2_strong_removed, player_2_weak_removed)
     
-    print '\n\nNash Equilibrium:\n', game, '\n', strategy_indices
-
+    print '\n\nNash Equilibrium:\n', game, '\n', strategy_indices, '\n'
+    if not check_for_one_cell(game):
+        return None
+        
+    return strategy_indices[0][0]
     
-solve_game(bars, True)
+#solve_game(bars, True)
+
+test_game_1 = [ 
+ [ (50, 50), (57, 55), (57, 60) ],
+ [ (55, 57), (63, 63), (70, 60) ],
+ [ (60, 57), (60, 70), (69, 69) ] ]
+
+solution = solve_game( test_game_1, True)
+
+assert solution == (1, 1)
+
+
+test_game_2 = [ 
+ [ (50, 50), (50, 50), (50, 50) ],
+ [ (50, 57), (63, 63), (70, 60) ],
+ [ (50, 57), (60, 70), (69, 69) ] ]
+
+strong_solution = solve_game( test_game_2)
+weak_solution = solve_game( test_game_2, weak=True)
+
+assert strong_solution == None
+assert weak_solution == (1, 1) # insert your solution from above.
+
+
+test_game_3 = [ 
+ [ (50, 50), (50, 45), (49, 45) ],
+ [ (50, 57), (35, 49), (70, 60) ],
+ [ (60, 57), (49, 70), (69, 69) ] ]
+
+strong_solution = solve_game( test_game_3)
+weak_solution = solve_game( test_game_3, weak=True)
+
+assert strong_solution == None
+assert weak_solution == None
+
 
 
 #TODO REMOVE PAYOFFS FROM WHAT IS RETURNED
