@@ -7,49 +7,107 @@ from IPython.core.display import *
 prisoners_dilemma = [
  [( -5, -5), (-1,-10)],
  [(-10, -1), (-2, -2)]]
+ 
+bars = [ 
+ [ (10, 10), (14, 12), (14, 15) ],
+ [ (12, 14), (20, 20), (28, 15) ],
+ [ (15, 14), (15, 28), (25, 25) ] ]
+
+def remove_column(game, column):
+    for row in game:
+        row.pop(column)
+    return game
 
 
-def remove_strongly_dominated_strategy(game, player):
+def remove_strongly_dominated_strategy_player_1(game):
     print 'game: ', game
     print 'length: ', len(game), '\n\n'
-    if player == 0:
         
-        for i in range(len(game) - 1):
-            strategy1 = game[i]
-            print 'strategy1', strategy1
-            
-            for j in range(len(game) - 1):
-                j += 1
-                strategy2 = game[j]
+    for i in range(len(game) - 1):
+        strategy1 = game[i]
+        print 'strategy1', strategy1
+        
+        for j in range(len(game) - 1):
+            j += 1
+            strategy2 = game[j]
 
-                print '\tstrategy2', strategy2
+            print '\tstrategy2', strategy2
+            
+            one_dominates_two = True 
+            two_dominates_one = True
+            for k in range(len(strategy1) - 1):
+                value1 = strategy1[k][0]
+                value2 = strategy2[k][0]
+                one_dominates_two &= value1 > value2 
+                two_dominates_one &= value2 > value1
                 
-                one_dominates_two = True 
-                two_dominates_one = True
-                for k in range(len(strategy1) - 1):
-                    value1 = strategy1[k][0]
-                    value2 = strategy2[k][0]
-                    one_dominates_two &= value1 > value2 
-                    two_dominates_one &= value2 > value1
-                    
-                if one_dominates_two:
-                    print 'one_dominates_two'
-                    game.pop(j)
-                    return game
-                
-                if two_dominates_one:
-                    print 'two_dominates_one'
-                    game.pop(i)
-                    return game
+            if one_dominates_two:
+                print 'one_dominates_two'
+                game.pop(j)
+                return game
+            
+            if two_dominates_one:
+                print 'two_dominates_one'
+                game.pop(i)
+                return game
     
     print 'no dominated strategy'
     return game
 
-new_game = remove_strongly_dominated_strategy (prisoners_dilemma, 0)
-print '\nnew game: ', new_game            
-        
-    
+#A flipped game must be passed in here
+def remove_strongly_dominated_strategy_player_2(game):
 
+    flipped_game = flip_game(game)
+    for i in range(len(flipped_game) - 1):
+        strategy1 = flipped_game[i]
+        print 'strategy1', strategy1
+        
+        for j in range(len(flipped_game) - 1):
+            j += 1
+            strategy2 = flipped_game[j]
+
+            print '\tstrategy2', strategy2
+            
+            one_dominates_two = True 
+            two_dominates_one = True
+            for k in range(len(strategy1) - 1):
+                value1 = strategy1[k][1]
+                value2 = strategy2[k][1]
+                one_dominates_two &= value1 > value2 
+                two_dominates_one &= value2 > value1
+                
+            if one_dominates_two:
+                print 'one_dominates_two'
+                remove_column(game, j)
+                return game
+            
+            if two_dominates_one:
+                print 'two_dominates_one'
+                remove_column(game, i)
+                return game
+    
+    print 'no dominated strategy'
+    return game  
+
+def flip_game(game):
+    num_rows = len(game)
+    row_length = len(game[0])
+    
+    flipped_game = []
+    for i in range(row_length):
+        column = []
+        for j in range(num_rows):
+            column.append(game[j][i])
+        flipped_game.append(column)
+        
+    print '\nflipped game: ', flipped_game
+    
+    return flipped_game
+
+new_game = remove_strongly_dominated_strategy_player_2(prisoners_dilemma)
+print '\n\nnew_game'
+for row in new_game:
+    print row
 
 
 def switch_player(player):
@@ -64,14 +122,14 @@ def solve_game(game, weak=False):
     player = 0
     if not weak:
         while len(game) > 1:
-            remove_strongly_dominated_strategy (prisoners_dilemma, player)
+            remove_strongly_dominated_strategy_player_1(game)
             player = switch_player(player)
+            remove_strongly_dominated_strategy_player_2(game)
     
     print '\n\nNash Equilibrium:\n', game
 
     
 solve_game(prisoners_dilemma)
-
 
 
 
