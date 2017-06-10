@@ -47,17 +47,11 @@ def get_strategy_indices(game):
     return strategy_indices
         
 
-def switch_player(player):
-    if player == 0:
-        return 1
-    else:
-        return 0
-
-
 def check_for_one_cell(game):
     if len(game) == 1 and len(game[0]) == 1:
         return True
     return False
+    
     
 def print_matrix(game):
     print 'game:'
