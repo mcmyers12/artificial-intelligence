@@ -1,4 +1,3 @@
-#%matplotlib inline
 
 from __future__ import division
 
@@ -39,6 +38,45 @@ def draw_map(planar_map, size, color_assignments=None):
 connecticut = { "nodes": ["Fairfield", "Litchfield", "New Haven", "Hartford", "Middlesex", "Tolland", "New London", "Windham"],
                 "edges": [(0,1), (0,2), (1,2), (1,3), (2,3), (2,4), (3,4), (3,5), (3,6), (4,6), (5,6), (5,7), (6,7)],
                 "coordinates": [( 46, 52), ( 65,142), (104, 77), (123,142), (147, 85), (162,140), (197, 94), (217,146)]}
+
+
+europe = {
+    "nodes":  ["Iceland", "Ireland", "United Kingdom", "Portugal", "Spain",
+                 "France", "Belgium", "Netherlands", "Luxembourg", "Germany",
+                 "Denmark", "Norway", "Sweden", "Finland", "Estonia",
+                 "Latvia", "Lithuania", "Poland", "Czech Republic", "Austria",
+                 "Liechtenstein", "Switzerland", "Italy", "Malta", "Greece",
+                 "Albania", "Macedonia", "Kosovo", "Montenegro", "Bosnia Herzegovina",
+                 "Serbia", "Croatia", "Slovenia", "Hungary", "Slovakia",
+                 "Belarus", "Ukraine", "Moldova", "Romania", "Bulgaria",
+                 "Cyprus", "Turkey", "Georgia", "Armenia", "Azerbaijan",
+                 "Russia" ], 
+    "edges": [(0,1), (0,2), (1,2), (2,5), (2,6), (2,7), (2,11), (3,4),
+                 (4,5), (4,22), (5,6), (5,8), (5,9), (5,21), (5,22),(6,7),
+                 (6,8), (6,9), (7,9), (8,9), (9,10), (9,12), (9,17), (9,18),
+                 (9,19), (9,21), (10,11), (10,12), (10,17), (11,12), (11,13), (11,45), 
+                 (12,13), (12,14), (12,15), (12,17), (13,14), (13,45), (14,15),
+                 (14,45), (15,16), (15,35), (15,45), (16,17), (16,35), (17,18),
+                 (17,34), (17,35), (17,36), (18,19), (18,34), (19,20), (19,21), 
+                 (19,22), (19,32), (19,33), (19,34), (20,21), (21,22), (22,23),
+                 (22,24), (22,25), (22,28), (22,29), (22,31), (22,32), (24,25),
+                 (24,26), (24,39), (24,40), (24,41), (25,26), (25,27), (25,28),
+                 (26,27), (26,30), (26,39), (27,28), (27,30), (28,29), (28,30),
+                 (29,30), (29,31), (30,31), (30,33), (30,38), (30,39), (31,32),
+                 (31,33), (32,33), (33,34), (33,36), (33,38), (34,36), (35,36),
+                 (35,45), (36,37), (36,38), (36,45), (37,38), (38,39), (39,41),
+                 (40,41), (41,42), (41,43), (41,44), (42,43), (42,44), (42,45),
+                 (43,44), (44,45)],
+    "coordinates": [( 18,147), ( 48, 83), ( 64, 90), ( 47, 28), ( 63, 34),
+                   ( 78, 55), ( 82, 74), ( 84, 80), ( 82, 69), (100, 78),
+                   ( 94, 97), (110,162), (116,144), (143,149), (140,111),
+                   (137,102), (136, 95), (122, 78), (110, 67), (112, 60),
+                   ( 98, 59), ( 93, 55), (102, 35), (108, 14), (130, 22),
+                   (125, 32), (128, 37), (127, 40), (122, 42), (118, 47),
+                   (127, 48), (116, 53), (111, 54), (122, 57), (124, 65),
+                   (146, 87), (158, 65), (148, 57), (138, 54), (137, 41),
+                   (160, 13), (168, 29), (189, 39), (194, 32), (202, 33),
+                   (191,118)]}
 
 
 def initialize_node_info_map(planar_map, colors):
@@ -85,8 +123,11 @@ def select_unassigned_variable(node_info_map, colors):
             if len(colors) == mininimum_remaining:
                 selected_nodes.append(node)
     
+    #if selected_nodes:      #TODO this added not in alg
     selected_nodes.sort() 
     return selected_nodes[0]
+    
+    #return None
 
 
 def get_num_constraints(variable, planar_map, node_info_map, color):
@@ -162,7 +203,10 @@ def determine_forward_check_success(variable, color, node_info_map, planar_map):
     
     for node in connected_nodes:
         node_colors_copy = copy.deepcopy(node_info_map[node]["colors"])
-        node_colors_copy.remove(color)
+
+        if color in node_colors_copy:
+            node_colors_copy.remove(color)
+
         if not node_colors_copy:
             return False
             
@@ -174,7 +218,8 @@ def forward_check(variable, color, node_info_map, planar_map):
     connected_nodes = get_connected_nodes(variable, planar_map)
     
     for node in connected_nodes:
-        node_info_map[node]["colors"].remove(color)
+        if color in node_info_map[node]["colors"]:
+            node_info_map[node]["colors"].remove(color)
         
 
 def remove_forward_check(variable, color, node_info_map, planar_map):
@@ -185,36 +230,49 @@ def remove_forward_check(variable, color, node_info_map, planar_map):
                 
 
 def backtracking_search(planar_map, colors, trace):
-    return backtrack([], planar_map, colors, trace)
+    node_info_map = initialize_node_info_map(planar_map, colors)
+    return backtrack([], planar_map, colors, trace, node_info_map)
     
 
-def backtrack(assignments, planar_map, colors, trace):
+def backtrack(assignments, planar_map, colors, trace, node_info_map):
     if trace:
         print "Beginning backtracking"
-    
-    node_info_map = initialize_node_info_map(planar_map, colors)
-    
+
     if check_complete_assignment(assignments, planar_map): #All nodes are assigned colors?
         return assignments
         
     node = select_unassigned_variable(node_info_map, colors) #Minimum remaining values - choose variable with fewest values left
     
+    '''if not node: #TODO this added not in alg
+        return'''
+        
+    print '\nunassigned node selected: ', node, '\n'
+    
     values = order_domain_values(node, node_info_map, planar_map) #Least constraining value
+
+    print "\nvalues:", values, "\n"
+
     for color in values:  
         if check_consistent(node, color, assignments, planar_map): #value is consitent with assignment
-            assignments.append((node, color)) #add {variable = value} to assignment
-            
+
+            print '\nis consistent\n'
+
+            if ((node, color)) not in assignments:
+                assignments.append((node, color)) #add {variable = value} to assignment
+
             print "\nAdded"
             print assignments
             
             node_info_map[node]["assigned"] = True;
             
             forward_check_success = determine_forward_check_success(node, color, node_info_map, planar_map)
+
+            print 'forward_check_success', forward_check_success
             
             if forward_check_success:
                 forward_check(node, color, node_info_map, planar_map)
                 
-                result = backtrack(assignments, planar_map)
+                result = backtrack(assignments, planar_map, colors, trace, node_info_map)
                 if result:
                     return result
         #remove {var = value} and inferences from assignments
@@ -228,14 +286,40 @@ def backtrack(assignments, planar_map, colors, trace):
         
 
 def color_map(planar_map, colors, trace=False):
-    backtracking_search(planar_map, colors, trace)
+    assignments = backtracking_search(planar_map, colors, trace)
+    return assignments
 
 
 
-connecticut_colors = color_map( connecticut, ["red", "blue", "green", "yellow"], trace=True)   
+connecticut_colors = color_map(connecticut, ["red", "blue", "green", "yellow"], trace=True)
 
+print '\n\n\nconnecticut colors', connecticut_colors
 
+edges = connecticut["edges"]
+nodes = connecticut[ "nodes"]
+colors = connecticut_colors
+COLOR = 1
 
+for start, end in edges:
+    try:
+        assert colors[ start][COLOR] != colors[ end][COLOR]
+    except AssertionError:
+        print "%s and %s are adjacent but have the same color.\n\n" % (nodes[ start], nodes[ end])
+        
+'''europe_colors = color_map( europe, ["red", "blue", "green", "yellow"], trace=True)
+
+edges = europe["edges"]
+nodes = europe[ "nodes"]
+colors = europe_colors
+COLOR = 1
+
+for start, end in edges:
+    try:
+        assert colors[ start][COLOR] != colors[ end][COLOR]
+    except AssertionError:
+        print "%s and %s are adjacent but have the same color." % (nodes[ start], nodes[ end])'''
+        
+        
 
 #TODO check for any deep copy issues
 
