@@ -123,11 +123,11 @@ def select_unassigned_variable(node_info_map, colors):
             if len(colors) == mininimum_remaining:
                 selected_nodes.append(node)
     
-    #if selected_nodes:      #TODO this added not in alg
-    selected_nodes.sort() 
-    return selected_nodes[0]
+    if selected_nodes:      #TODO this added not in alg
+        selected_nodes.sort() 
+        return selected_nodes[0]
     
-    #return None
+    return None
 
 
 def get_num_constraints(variable, planar_map, node_info_map, color):
@@ -226,7 +226,8 @@ def remove_forward_check(variable, color, node_info_map, planar_map):
     connected_nodes = get_connected_nodes(variable, planar_map)
     
     for node in connected_nodes:
-        node_info_map[node]["colors"].append(color)
+        if color not in node_info_map[node]["colors"]:
+            node_info_map[node]["colors"].append(color)
 
 
 #Put the assignments in the same order as the order of "nodes" in the planar_map
@@ -250,7 +251,7 @@ def backtracking_search(planar_map, colors, trace):
 
 def backtrack(assignments, planar_map, colors, trace, node_info_map):
     if trace:
-        print "Beginning backtracking"
+        print "Searching"
 
     if check_complete_assignment(assignments, planar_map): #All nodes are assigned colors?
         ordered_assignments = order_assignments(assignments, planar_map)
@@ -258,8 +259,8 @@ def backtrack(assignments, planar_map, colors, trace, node_info_map):
         
     node = select_unassigned_variable(node_info_map, colors) #Minimum remaining values - choose variable with fewest values left
     
-    '''if not node: #TODO this added not in alg
-        return'''
+    if not node: #TODO this added not in alg
+        return None #returns None if no coloring can be found???
         
     print '\nunassigned node selected: ', node, '\n'
     
@@ -291,10 +292,16 @@ def backtrack(assignments, planar_map, colors, trace, node_info_map):
                 if result:
                     return result
         #remove {var = value} and inferences from assignments
-        assignments.pop(-1) #removes the last added value
+        if assignments:
+            
+            unassigned_node = assignments.pop(-1) #removes the last added value
+            
+            print "\nRemoved", unassigned_node
+            print assignments
+            
+            node_info_map[unassigned_node[0]]["assigned"] = False
         
-        print "\nRemoved"
-        print assignments
+        
         remove_forward_check(node, color, node_info_map, planar_map)
         
     return False 
@@ -321,7 +328,10 @@ for start, end in edges:
     except AssertionError:
         print "%s and %s are adjacent but have the same color.\n\n" % (nodes[ start], nodes[ end])
         
-'''europe_colors = color_map( europe, ["red", "blue", "green", "yellow"], trace=True)
+europe_colors = color_map( europe, ["red", "blue", "green", "yellow"], trace=True)
+
+print '\n\n\neurope_colors', europe_colors
+
 
 edges = europe["edges"]
 nodes = europe[ "nodes"]
@@ -332,11 +342,12 @@ for start, end in edges:
     try:
         assert colors[ start][COLOR] != colors[ end][COLOR]
     except AssertionError:
-        print "%s and %s are adjacent but have the same color." % (nodes[ start], nodes[ end])'''
+        print "%s and %s are adjacent but have the same color." % (nodes[ start], nodes[ end])
         
         
 
 #TODO check for any deep copy issues
 
+#TODO possibly ask why we need to ever use list comprehension to extract colors for draw_map
 
 
