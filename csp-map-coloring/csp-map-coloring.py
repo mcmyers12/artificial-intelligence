@@ -227,6 +227,20 @@ def remove_forward_check(variable, color, node_info_map, planar_map):
     
     for node in connected_nodes:
         node_info_map[node]["colors"].append(color)
+
+
+#Put the assignments in the same order as the order of "nodes" in the planar_map
+def order_assignments(assignments, planar_map):
+    nodes = planar_map["nodes"]
+    
+    ordered_assignments = []
+    
+    for node in nodes:
+        for tuple in assignments:
+            if tuple[0] == node:
+                ordered_assignments.append(tuple)
+    
+    return ordered_assignments
                 
 
 def backtracking_search(planar_map, colors, trace):
@@ -239,7 +253,8 @@ def backtrack(assignments, planar_map, colors, trace, node_info_map):
         print "Beginning backtracking"
 
     if check_complete_assignment(assignments, planar_map): #All nodes are assigned colors?
-        return assignments
+        ordered_assignments = order_assignments(assignments, planar_map)
+        return ordered_assignments
         
     node = select_unassigned_variable(node_info_map, colors) #Minimum remaining values - choose variable with fewest values left
     
@@ -296,13 +311,13 @@ connecticut_colors = color_map(connecticut, ["red", "blue", "green", "yellow"], 
 print '\n\n\nconnecticut colors', connecticut_colors
 
 edges = connecticut["edges"]
-nodes = connecticut[ "nodes"]
+nodes = connecticut["nodes"]
 colors = connecticut_colors
 COLOR = 1
 
 for start, end in edges:
     try:
-        assert colors[ start][COLOR] != colors[ end][COLOR]
+        assert colors[start][COLOR] != colors[end][COLOR]
     except AssertionError:
         print "%s and %s are adjacent but have the same color.\n\n" % (nodes[ start], nodes[ end])
         
