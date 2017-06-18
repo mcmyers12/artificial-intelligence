@@ -167,7 +167,8 @@ def order_domain_values(variable, node_info_map, planar_map, trace):
         print 'Ordering domain values using Least Constraining Value'
     
     priority_queue = [] # priority queue of (color, num_constraints)
-    for color in node_info_map[variable]["colors"]:   
+    colors = sorted(node_info_map[variable]["colors"])
+    for color in colors:   
         num_constraints = get_num_constraints(variable, planar_map, node_info_map, color)
         
         for i in range(len(priority_queue)):
