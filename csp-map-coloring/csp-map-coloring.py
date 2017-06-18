@@ -96,16 +96,25 @@ def node_assigned(node, assignments):
     return False        
 
 
-def check_complete_assignment(assignments, planar_map):
+def check_complete_assignment(assignments, planar_map, trace):
+    if trace:
+        print 'Checking for a complete assignment'
     for node in planar_map["nodes"]:
         if not node_assigned(node, assignments):
+            if trace:
+                print '\tAssignment not complete, continuing algorithm\n'
             return False
     
+    if trace:
+        print '\tAssignment is complete\n'
     return True 
  
 
 #Minimum remaining values
-def select_unassigned_variable(node_info_map, colors):
+def select_unassigned_variable(node_info_map, colors, trace):
+    if trace:
+        print 'Selecting an unassigned variable using minimum remaining values, ties broken in ascending order'
+
     mininimum_remaining = len(colors)
         
     for node, node_info in node_info_map.iteritems():
@@ -117,14 +126,16 @@ def select_unassigned_variable(node_info_map, colors):
     
     selected_nodes = []
     for node, node_info in node_info_map.iteritems():
-        print node, node_info
         colors = node_info["colors"]
         if not node_info["assigned"]:
             if len(colors) == mininimum_remaining:
                 selected_nodes.append(node)
     
-    if selected_nodes:      #TODO this added not in alg
-        selected_nodes.sort() 
+    if selected_nodes:
+        selected_nodes.sort()
+        
+        if trace:
+            print '\tLeast value node found with minimum remaining values: ', selected_nodes[0], '\n'
         return selected_nodes[0]
     
     return None
@@ -151,7 +162,10 @@ def get_num_constraints(variable, planar_map, node_info_map, color):
     return num_constraints
             
             
-def order_domain_values(variable, node_info_map, planar_map): 
+def order_domain_values(variable, node_info_map, planar_map, trace): 
+    if trace:
+        print 'Ordering domain values using Least Constraining Value'
+    
     priority_queue = [] # priority queue of (color, num_constraints)
     for color in node_info_map[variable]["colors"]:   
         num_constraints = get_num_constraints(variable, planar_map, node_info_map, color)
@@ -164,6 +178,9 @@ def order_domain_values(variable, node_info_map, planar_map):
             priority_queue.append((color, num_constraints))
             
     ordered_colors = [item[0] for item in priority_queue]
+    
+    if trace:
+        print '\tOrdered domain values:', ordered_colors, '\n'    
     return ordered_colors
 
     
@@ -186,14 +203,20 @@ def get_connected_nodes(variable, planar_map):
     return connected_nodes
     
     
-def check_consistent(variable, color, assignments, planar_map):
+def check_consistent(variable, color, assignments, planar_map, trace):
+    if trace:
+        print 'Checking whether variable', variable, ' and value', color, 'are consistent with assignment'
+
     connected_nodes = get_connected_nodes(variable, planar_map)
     
     for item in assignments:
         if item[0] in connected_nodes:
             if item[1] == color:
+                if trace:
+                    print '\tNot consistent\n'
                 return False
-    
+    if trace:
+        print '\tConsistent\n'
     return True
 
 
@@ -214,12 +237,21 @@ def determine_forward_check_success(variable, color, node_info_map, planar_map):
     
     
 #For each unassigned variable Y that is connected to X, delete from Y the color assigned to X
-def forward_check(variable, color, node_info_map, planar_map):
+def forward_check(variable, color, node_info_map, planar_map, trace):
+    if trace:
+        print 'Forward checking for variable', variable
+    
     connected_nodes = get_connected_nodes(variable, planar_map)
     
     for node in connected_nodes:
         if color in node_info_map[node]["colors"]:
+            if trace:
+                print '\tRemoving value', color, 'from variable', node
+                
             node_info_map[node]["colors"].remove(color)
+            
+    if trace:
+        print
         
 
 def remove_forward_check(variable, color, node_info_map, planar_map):
@@ -242,69 +274,57 @@ def order_assignments(assignments, planar_map):
                 ordered_assignments.append(tuple)
     
     return ordered_assignments
+    
+    
+def remove_assignments_and_forward_checks(assignments, node, color, node_info_map, planar_map, trace):
+    if trace:
+        'Removing assignment and forward checking for variable', node, 'and value ', color, '\n'
+ 
+    if assignments:
+        unassigned_node = assignments.pop(-1) #removes the last added value
+        node_info_map[unassigned_node[0]]["assigned"] = False
+    
+    remove_forward_check(node, color, node_info_map, planar_map)
                 
 
 def backtracking_search(planar_map, colors, trace):
+    if trace:
+        print '\n\nExecuting search\n'
+        
     node_info_map = initialize_node_info_map(planar_map, colors)
     return backtrack([], planar_map, colors, trace, node_info_map)
     
 
 def backtrack(assignments, planar_map, colors, trace, node_info_map):
-    if trace:
-        print "Searching"
-
-    if check_complete_assignment(assignments, planar_map): #All nodes are assigned colors?
-        ordered_assignments = order_assignments(assignments, planar_map)
-        return ordered_assignments
+    if check_complete_assignment(assignments, planar_map, trace): #All nodes are assigned colors?
+        return order_assignments(assignments, planar_map)
         
-    node = select_unassigned_variable(node_info_map, colors) #Minimum remaining values - choose variable with fewest values left
-    
-    if not node: #TODO this added not in alg
-        return None #returns None if no coloring can be found???
-        
-    print '\nunassigned node selected: ', node, '\n'
-    
-    values = order_domain_values(node, node_info_map, planar_map) #Least constraining value
-
-    print "\nvalues:", values, "\n"
-
+    node = select_unassigned_variable(node_info_map, colors, trace) #Minimum remaining values - choose variable with fewest values left
+    if not node: 
+        return None #returns None if no coloring can be found???'''
+            
+    values = order_domain_values(node, node_info_map, planar_map, trace) #Least constraining value
     for color in values:  
-        if check_consistent(node, color, assignments, planar_map): #value is consitent with assignment
-
-            print '\nis consistent\n'
-
+        if check_consistent(node, color, assignments, planar_map, trace): #value is consitent with assignment
             if ((node, color)) not in assignments:
                 assignments.append((node, color)) #add {variable = value} to assignment
 
-            print "\nAdded"
-            print assignments
-            
             node_info_map[node]["assigned"] = True;
             
             forward_check_success = determine_forward_check_success(node, color, node_info_map, planar_map)
-
-            print 'forward_check_success', forward_check_success
-            
             if forward_check_success:
-                forward_check(node, color, node_info_map, planar_map)
+                forward_check(node, color, node_info_map, planar_map, trace)
                 
                 result = backtrack(assignments, planar_map, colors, trace, node_info_map)
                 if result:
                     return result
-        #remove {var = value} and inferences from assignments
-        if assignments:
-            
-            unassigned_node = assignments.pop(-1) #removes the last added value
-            
-            print "\nRemoved", unassigned_node
-            print assignments
-            
-            node_info_map[unassigned_node[0]]["assigned"] = False
         
+        if trace:
+            print 'Forward checking not successful, backtracking\n'
+        remove_assignments_and_forward_checks(assignments, node, color, node_info_map, planar_map, trace)
         
-        remove_forward_check(node, color, node_info_map, planar_map)
-        
-    return False 
+    return None 
+    
         
 
 def color_map(planar_map, colors, trace=False):
@@ -328,6 +348,7 @@ for start, end in edges:
     except AssertionError:
         print "%s and %s are adjacent but have the same color.\n\n" % (nodes[ start], nodes[ end])
         
+
 europe_colors = color_map( europe, ["red", "blue", "green", "yellow"], trace=True)
 
 print '\n\n\neurope_colors', europe_colors
@@ -345,9 +366,4 @@ for start, end in edges:
         print "%s and %s are adjacent but have the same color." % (nodes[ start], nodes[ end])
         
         
-
-#TODO check for any deep copy issues
-
-#TODO possibly ask why we need to ever use list comprehension to extract colors for draw_map
-
 
