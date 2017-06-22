@@ -1,6 +1,7 @@
 from StringIO import StringIO
 import random
 import copy
+import sys
 
 
 def read_world(filename):
@@ -20,15 +21,14 @@ costs = {'.': -1, '*': -3, '^': -5, '~': -7}
 cardinal_moves = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 
 
-# TODO
 # pick an initial state for each iteration
 # picks a random state
 def pick_initial_state(world):
-    coord_1 = random.randint(0, len(world) - 1)
+    y_coordinate = random.randint(0, len(world) - 1)
     
-    coord_2 = random.randint(0, len(world[0]) - 1)
+    x_coordinate = random.randint(0, len(world[0]) - 1)
 
-    return (coord_1, 0)
+    return (x_coordinate, y_coordinate)
 
 
 # q array for each action that updates in place, set all values to 0
@@ -54,21 +54,18 @@ def initialize_zeros(world, actions):
 
 
 def is_valid(state, action, world):
-    depth_coord = state[0]
-    width_coord = state[1]
-
-    depth_coord = depth_coord + action[0]
-    width_coord = width_coord + action[1]
+    x_coordinate = state[0] + action[0]
+    y_coordinate = state[1] + action[1]
 
     world_depth = len(world)
-    if depth_coord < 0 or depth_coord >= world_depth:
+    if y_coordinate < 0 or y_coordinate >= world_depth:
         return False
 
-    world_width = len(world[depth_coord])
-    if width_coord < 0 or width_coord >= world_width:
+    world_width = len(world[0])
+    if x_coordinate < 0 or x_coordinate >= world_width:
         return False
 
-    if world[depth_coord][width_coord] == 'x':
+    if world[y_coordinate][x_coordinate] == 'x':
         return False
 
     return True
@@ -82,8 +79,8 @@ def get_actions(state, visits, actions, world):
     other_actions = []
     for action in actions:
         if is_valid(state, action, world):
-            x_coordinate = state[1]
-            y_coordinate = state[0]
+            x_coordinate = state[0]
+            y_coordinate = state[1]
             num_visits = visits[action][y_coordinate][x_coordinate]
             if num_visits < min_visits:
                 min_visits = num_visits
@@ -106,7 +103,9 @@ def get_max_action_value(state, actions, q):
     max = float("-inf")
 
     for action in actions:
-        q_value = q[action][state[0]][state[1]]
+        x_coordinate = state[0]
+        y_coordinate = state[1]
+        q_value = q[action][y_coordinate][x_coordinate]
         if q_value > max:
             max = q_value
 
@@ -116,7 +115,9 @@ def get_max_action_value(state, actions, q):
 def calculate_q_value(alpha, gamma, reward, q, action, state, actions):
     max_action_value = get_max_action_value(state, actions, q)
 
-    q_value = q[action][state[0]][state[1]]
+    x_coordinate = state[0]
+    y_coordinate = state[1]
+    q_value = q[action][y_coordinate][x_coordinate]
 
     new_q_value = (1 - alpha) * q_value + alpha * (reward + gamma * max_action_value)
 
@@ -154,11 +155,10 @@ def execute_action(state, world, selected_action, other_actions, goal, goal_rewa
 
     print 'action executed: ', selected_action
 
-    x_location = state[1] + selected_action[1]
-    y_location = state[0] + selected_action[0]
+    x_location = state[0] + selected_action[0]
+    y_location = state[1] + selected_action[1]
 
-    visits[selected_action][state[0]][state[1]] += 1
-    print 'visits[selected_action][state[0]][state[1]]', visits[selected_action][state[0]][state[1]]
+    visits[selected_action][state[1]][state[0]] += 1
 
     new_state = (x_location, y_location)
     terrain = world[y_location][x_location]
@@ -169,7 +169,18 @@ def execute_action(state, world, selected_action, other_actions, goal, goal_rewa
         reward = goal_reward
 
     return new_state, reward
+
+
+def get_state_policy(state, world, q):
+    max_action_value = float("-inf")
+    max_action = None
+    for action in q:
+        q_value = q[action][state[1]][state[0]]
+        if q_value > max_action_value and is_valid(state, action, world):
+            max_action_value = q_value
+            max_action = action
     
+    return max_action
 
 def get_policy(q, world):
     policy = {}
@@ -177,14 +188,9 @@ def get_policy(q, world):
     for i in range(len(world)):
         row = world[i]
         for j in range(len(row)):
-            max_action_value = float("-inf")
-            max_action = None
-            for action in q:
-                if q[action][i][j] > max_action_value:
-                    max_action_value = q[action][i][j]
-                    max_action = action
+            state = (j, i)
     
-            policy[(j, i)] = max_action
+            policy[state] = get_state_policy(state, world, q)
             
     return policy
 
@@ -192,7 +198,14 @@ def get_policy(q, world):
 def pretty_print_policy(cols, rows, policy):
     for i in range(rows):
         for j in range(cols):
-            print policy[(j,i)]
+            if policy[(j,i)] == (0,-1):
+                sys.stdout.write('v')
+            elif policy[(j,i)] == (0,1):
+                sys.stdout.write('^')
+            elif policy[(j,i)] == (1,0):
+                sys.stdout.write('>')
+            elif policy[(j,i)] == (-1,0):
+                sys.stdout.write('<')
         print
                 
 
@@ -210,30 +223,16 @@ def q_learning(world, costs, goal, reward, actions, gamma, alpha):
     visits = initialize_zeros(world, actions)
     stop = False
 
-    print 'Q:'
-    for key in q:
-        print '\tq[', key, ']:'
-        for row in q[key]:
-            print '\t\t', row
-        print
-    print
-
-    print 'Visits:'
-    for key in visits:
-        print '\tvisits[', key, ']:'
-        for row in visits[key]:
-            print '\t\t', row
-        print
-
     while not stop:
         terminal = False
         state = pick_initial_state(world)
 
-        print '\n\nat state: ', state
-
+        
         previous_q = copy.deepcopy(q)
 
         while not terminal:
+            print '\n\nat state: ', state
+
             selected_action, other_actions = get_actions(state, visits, actions, world)
 
             print 'selected action: ', selected_action
@@ -242,12 +241,13 @@ def q_learning(world, costs, goal, reward, actions, gamma, alpha):
             new_state, reward = execute_action(state, world, selected_action, other_actions, goal, reward, visits)
             new_q_value = calculate_q_value(alpha, gamma, reward, q, selected_action, state, actions)
 
-            print 'new state, reward after execute: ', new_state, reward
+            print 'new state: ', new_state
+            print 'reward after execute: ', reward
 
             print 'new q value: ', new_q_value
 
-            x_coordinate = state[1]
-            y_coordinate = state[0]
+            x_coordinate = state[0]
+            y_coordinate = state[1]
 
             q[selected_action][y_coordinate][x_coordinate] = new_q_value
 
@@ -280,27 +280,22 @@ def q_learning(world, costs, goal, reward, actions, gamma, alpha):
     return get_policy(q, world)
 
 
-test_world = [
-    ['.', '*', '*', '*', '*', '*', '*'],
-    ['.', '*', '*', '*', '*', '*', '*'],
-    ['.', '*', 'x', '*', '*', '*', '*'],
-    ['.', '.', '.', '.', '.', '.', '.'],
-    ['*', '*', 'x', '*', '*', '*', '.'],
-    ['*', '*', '*', '*', '*', '*', '.'],
-    ['*', '*', '*', '*', '*', '*', '.'],
-]
 
 gamma = .9
 alpha = .25
 goal = (5, 5)
+world = read_world("world.txt")
+print world
 
-policy = q_learning(test_world, costs, goal, 100, cardinal_moves, gamma, alpha)
+policy = q_learning(world, costs, goal, 100, cardinal_moves, gamma, alpha)
 print policy
 
-cols = len(test_world[0])
-rows = len(test_world)
+cols = len(world[0])
+rows = len(world)
 
-#pretty_print_policy(cols, rows, policy)
+pretty_print_policy(cols, rows, policy)
+
+print is_valid((1,0), (-1,1), world)
 
 
 
