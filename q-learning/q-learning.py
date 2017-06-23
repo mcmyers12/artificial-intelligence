@@ -25,7 +25,7 @@ cardinal_moves = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 # picks a random state
 def pick_initial_state(world):
     y_coordinate = random.randint(0, len(world) - 1)
-    
+
     x_coordinate = random.randint(0, len(world[0]) - 1)
 
     return (x_coordinate, y_coordinate)
@@ -112,8 +112,8 @@ def get_max_action_value(state, actions, q):
     return max
 
 
-def calculate_q_value(alpha, gamma, reward, q, action, state, actions):
-    max_action_value = get_max_action_value(state, actions, q)
+def calculate_q_value(alpha, gamma, reward, q, action, state, actions, new_state):
+    max_action_value = get_max_action_value(new_state, actions, q)
 
     x_coordinate = state[0]
     y_coordinate = state[1]
@@ -179,35 +179,39 @@ def get_state_policy(state, world, q):
         if q_value > max_action_value and is_valid(state, action, world):
             max_action_value = q_value
             max_action = action
-    
+
     return max_action
+
 
 def get_policy(q, world):
     policy = {}
-    
+
     for i in range(len(world)):
         row = world[i]
         for j in range(len(row)):
             state = (j, i)
-    
+
             policy[state] = get_state_policy(state, world, q)
-            
+
     return policy
 
 
-def pretty_print_policy(cols, rows, policy):
+def pretty_print_policy(cols, rows, policy, world, goal):
     for i in range(rows):
         for j in range(cols):
-            if policy[(j,i)] == (0,-1):
-                sys.stdout.write('v')
-            elif policy[(j,i)] == (0,1):
+            if world[i][j] == 'x':
+                sys.stdout.write('x')
+            elif (j,i) == goal:
+                sys.stdout.write('G')
+            elif policy[(j, i)] == (0, -1):
                 sys.stdout.write('^')
-            elif policy[(j,i)] == (1,0):
+            elif policy[(j, i)] == (0, 1):
+                sys.stdout.write('v')
+            elif policy[(j, i)] == (1, 0):
                 sys.stdout.write('>')
-            elif policy[(j,i)] == (-1,0):
+            elif policy[(j, i)] == (-1, 0):
                 sys.stdout.write('<')
         print
-                
 
 
 # world: lists of lists of terrain (S)
@@ -227,7 +231,6 @@ def q_learning(world, costs, goal, reward, actions, gamma, alpha):
         terminal = False
         state = pick_initial_state(world)
 
-        
         previous_q = copy.deepcopy(q)
 
         while not terminal:
@@ -239,7 +242,7 @@ def q_learning(world, costs, goal, reward, actions, gamma, alpha):
             print 'other actions: ', other_actions
 
             new_state, reward = execute_action(state, world, selected_action, other_actions, goal, reward, visits)
-            new_q_value = calculate_q_value(alpha, gamma, reward, q, selected_action, state, actions)
+            new_q_value = calculate_q_value(alpha, gamma, reward, q, selected_action, state, actions, new_state)
 
             print 'new state: ', new_state
             print 'reward after execute: ', reward
@@ -250,7 +253,6 @@ def q_learning(world, costs, goal, reward, actions, gamma, alpha):
             y_coordinate = state[1]
 
             q[selected_action][y_coordinate][x_coordinate] = new_q_value
-
 
             state = new_state
             terminal = new_state == goal
@@ -276,14 +278,13 @@ def q_learning(world, costs, goal, reward, actions, gamma, alpha):
         stop = check_for_stop(q, previous_q, actions)
         if stop:
             print '\n\nCONVERGED\n\n'
-    
+
     return get_policy(q, world)
 
 
-
-gamma = .9
+gamma = .75
 alpha = .25
-goal = (5, 5)
+goal = (6, 7)
 world = read_world("world.txt")
 print world
 
@@ -293,9 +294,9 @@ print policy
 cols = len(world[0])
 rows = len(world)
 
-pretty_print_policy(cols, rows, policy)
+pretty_print_policy(cols, rows, policy, world, goal)
 
-print is_valid((1,0), (-1,1), world)
+
 
 
 
