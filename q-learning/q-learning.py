@@ -21,8 +21,7 @@ costs = {'.': -1, '*': -3, '^': -5, '~': -7}
 cardinal_moves = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 
 
-# pick an initial state for each iteration
-# picks a random state
+
 def pick_initial_state(world):
     y_coordinate = random.randint(0, len(world) - 1)
 
@@ -31,7 +30,6 @@ def pick_initial_state(world):
     return (x_coordinate, y_coordinate)
 
 
-# q array for each action that updates in place, set all values to 0
 def initialize_zero_array(world):
     zero_array = []
     height = len(world)
@@ -71,8 +69,6 @@ def is_valid(state, action, world):
     return True
 
 
-# choose a based on Q
-# gets the least visited action
 def get_actions(state, visits, actions, world):
     min_visits = float("inf")
     selected_action = None
@@ -124,8 +120,8 @@ def calculate_q_value(alpha, gamma, reward, q, action, state, actions, new_state
     return new_q_value
 
 
-def check_for_stop(q, previous_q, actions):
-    epsilon = 0.5
+def check_for_convergence(q, previous_q, actions):
+    epsilon = 0.2
 
     for action in actions:
         q_values = q[action]
@@ -137,11 +133,9 @@ def check_for_stop(q, previous_q, actions):
                     return False
 
     return True
+    
 
-
-# TODO the ordering of this is probably wrong
-# execute selected action at 30%, other 3 at 10%
-def execute_action(state, world, selected_action, other_actions, goal, goal_reward, visits):
+def select_action_using_simulator(selected_action, other_actions):
     simulator_chance = (random.randint(1, 100))
 
     if 71 <= simulator_chance <= 80 and len(other_actions) >= 1:
@@ -153,7 +147,11 @@ def execute_action(state, world, selected_action, other_actions, goal, goal_rewa
     elif 91 <= simulator_chance <= 100 and len(other_actions) >= 3:
         selected_action = other_actions[2]
 
-    print 'action executed: ', selected_action
+    return selected_action
+
+
+def execute_action(state, world, selected_action, other_actions, goal, goal_reward, visits):
+    selected_action = select_action_using_simulator(selected_action, other_actions)
 
     x_location = state[0] + selected_action[0]
     y_location = state[1] + selected_action[1]
@@ -196,7 +194,9 @@ def get_policy(q, world):
     return policy
 
 
-def pretty_print_policy(cols, rows, policy, world, goal):
+def pretty_print_policy(policy, world, goal):
+    cols = len(world[0])
+    rows = len(world)
     for i in range(rows):
         for j in range(cols):
             if world[i][j] == 'x':
@@ -275,7 +275,7 @@ def q_learning(world, costs, goal, reward, actions, gamma, alpha):
                     print '\t\t', row
                 print
 
-        stop = check_for_stop(q, previous_q, actions)
+        stop = check_for_convergence(q, previous_q, actions)
         if stop:
             print '\n\nCONVERGED\n\n'
 
@@ -284,17 +284,14 @@ def q_learning(world, costs, goal, reward, actions, gamma, alpha):
 
 gamma = .75
 alpha = .25
-goal = (6, 7)
+goal = (0,0)
 world = read_world("world.txt")
 print world
 
 policy = q_learning(world, costs, goal, 100, cardinal_moves, gamma, alpha)
 print policy
 
-cols = len(world[0])
-rows = len(world)
-
-pretty_print_policy(cols, rows, policy, world, goal)
+pretty_print_policy(policy, world, goal)
 
 
 
