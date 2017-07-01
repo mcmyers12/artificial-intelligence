@@ -105,21 +105,39 @@ def select_parent(random_selection):
     return max_parent
 
 
+
+def get_random_indices(population):
+    random_indices = []
+    while len(random_indices) < 7:
+        random_index = random.randint(0, (len(population) - 1))
+        if random_index not in random_indices:
+            random_indices.append(random_index)
+            
+    return random_indices
+
 # There are many ways to pick parents - two options:
 # Roulette wheel: each individual's fitness is a proportion of total fitness (more in notes)
 # Tournament selection: pick 7 (or so) completely (uniformly) at random, choose one with highest fitness
 # Ensures parent 1 and 2 are different by removing parent 1 from randomly 7 selected values for parent 2, if there
 def select_parents_tournament_selection(population):
     #population_copy = copy.deepcopy(population)  ##TODO may not need to copy
-    random.shuffle(population)
-    random_selection = population[0:7]
-    parent1 = select_parent(random_selection)
+    random_indices = get_random_indices(population)
+     
+    random_individuals = []       
+    for index in random_indices:
+        random_individuals.append(population[index])
+    
+    parent1 = select_parent(random_individuals)
+    
+    random_indices = get_random_indices(population)
+     
+    random_individuals = []       
+    for index in random_indices:
+        random_individuals.append(population[index])
 
-    random.shuffle(population)
-    random_selection = population[0:7]
-    if parent1 in random_selection:
-        random_selection.remove(parent1)
-    parent2 = select_parent(random_selection)
+    if parent1 in random_individuals:
+        random_individuals.remove(parent1)
+    parent2 = select_parent(random_individuals)
 
     return parent1, parent2
 
@@ -222,7 +240,6 @@ def sphere(shift, xs):
     return sum([(x - shift) ** 2 for x in xs])
 
 
-sphere(0.5, [1.0, 2.0, -3.4, 5.0, -1.2, 3.23, 2.87, -4.23, 3.82, -4.61])
 
 # There is some trade off between population size and generations (parameters to experiment with)
 # Should not take long at all to converge
@@ -231,9 +248,9 @@ binary_ga_parameters = {
     "minimization": True,  # TODO: something with this
     "mutation_rate": .9,
     "crossover_rate": .9,
-    "population_size": 1000,  # 50-500s of individuals
+    "population_size": 5000,  # 50-500s of individuals
     "dimensions": 10,  # (given for this problem),
-    "number_of_generations": 200,  # TODO play with this
+    "number_of_generations": 100,  # TODO play with this
     "minimization_fitness_function": minimization_fitness
     # put other parameters in here.
 }
