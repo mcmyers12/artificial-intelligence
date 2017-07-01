@@ -7,13 +7,53 @@ import random
 #Transform the fitness score for minimization
 def minimization_fitness(fitness_score):
     return 1 / (1 + fitness_score)
+    
+
+#Return list of 10 floats
+#Return list of 10 random numbers between -5.12 to 5.12 ##TODO is this right?
+def initialize_phenotype():
+    phenotype = []
+    for i in range(10):
+        phenotype.append(round(random.uniform(-5.12, 5.12), 2))
+    return phenotype  
+
+
+#Use a 10 bit binary encoding for each xi . This gives each xi a potential value of 0 to 1024 
+    #which can be mapped to (-5.12, 5.12) by subtracting 512 and dividing by 100
+#Genotype is a single list of 100 bits
+def genotype_to_phenotype(genotype):
+    split_genotype = [genotype[i:i + 10] for i in xrange(0, len(genotype), 10)]
+    phenotype = []
+    for binary_representation in split_genotype:
+        decimal_representation = int("".join(str(x) for x in binary_representation),2)
+        decimal_representation = (decimal_representation - 512.0) / 100
+        phenotype.append(decimal_representation)    
+    return phenotype
+        
+        
+
+def phenotye_to_genotype(phenotype):
+    genotype = []
+    for decimal_representation in phenotype:
+        print 'original: ', decimal_representation
+        decimal_representation = int((decimal_representation * 100) + 512)
+        print 'decimal_representation: ', decimal_representation
+        binary_representation = [int(x) for x in bin(decimal_representation)[2:]]
+        print 'binary_representation: ', binary_representation
+        print 'back to original: ', (decimal_representation - 512.0) / 100
+        for bit in binary_representation:
+            genotype.append(bit)
+    return genotype
 
 
 #generate n random individuals according to the encoding scheme, the genetic code
 #initialize each individual as a dict with field "genotype"
 #the actual genetic presentation will be a List of 10*dimensions bits or dimensions real numbers
-def initialize_population(n):
-    pass
+def binary_ga_initialize_population(population_size):
+    for i in range(population_size):
+        individual = {}
+        individual["phenotype"] = initialize_phenotype()
+        individual["genotype"] = phenotye_to_genotype(phenotype)
     
 
 #each individual should contain at least fields for its genome and fitness score
@@ -60,7 +100,7 @@ def reproduce(parent1, parent2, crossover_rate, mutation_rate):
     #and the function value (for the shifted sphere) if passed a DEBUG=True flag.
 #Keep the tracing limited - print the best individual of the population every i generations (e.g. every 10) 
     #should see about 50 lines of tracing to show the best individual and their fitness
-def genetic_algorithm(parameters):
+def genetic_algorithm(parameters, initialize_population, crossover, mutate):
     population_size = parameters["population_size"]
     population = initialize_population(population_size)
     
@@ -82,7 +122,11 @@ def genetic_algorithm(parameters):
         
     #return the best individual ever encountered (and all their data including genotype, phenotype, fitness, and actual objective function value)
   
-  
+
+def binary_ga(parameters):
+    genetic_algorithm(parameters, binary_ga_initialize_population, binary_ga_crossover, binary_ga_mutate)
+    
+     
     
 def real_ga(parameters):
     pass
@@ -97,7 +141,7 @@ sphere( 0.5, [1.0, 2.0, -3.4, 5.0, -1.2, 3.23, 2.87, -4.23, 3.82, -4.61])
 
 #There is some trade off between population size and generations (parameters to experiment with)
 #Should not take long at all to converge
-parameters = {
+binary_ga_parameters = {
    "f": lambda xs: sphere( 0.5, xs),
    "minimization": True,
    "mutation_rate": mutation rate, 
@@ -108,6 +152,8 @@ parameters = {
    "minimization_fitness_function": minimization_fitness
    # put other parameters in here.
 }
+
+
 
 
 '''Fitness Score:
