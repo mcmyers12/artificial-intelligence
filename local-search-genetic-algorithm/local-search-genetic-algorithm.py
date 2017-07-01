@@ -72,20 +72,23 @@ Also make sure to remember that you may have to translate the objective function
 '''
 
 
-def calculate_fitness(individual):
+def calculate_fitness(individual, minimization):
     phenotype = individual["phenotype"]
-    sphere_value = sphere(0.5, phenotype)
-    fitness = minimization_fitness(sphere_value)
+    fitness = sphere(0.5, phenotype)
+    
+    if minimization:
+        fitness = minimization_fitness(fitness)
+    
     individual["fitness"] = fitness
 
 
 # each individual should contain at least fields for its genome and fitness score
 # evaluate applies the fitness function to each individual (make sure to transform fitness score)
-def evaluate(population):
+def evaluate(population, minimization):
     best_fitness = float("-inf")
     best_individual = None
     for individual in population:
-        calculate_fitness(individual)
+        calculate_fitness(individual, minimization)
         fitness = individual["fitness"]
         if fitness > best_fitness:
             best_individual = individual
@@ -200,12 +203,12 @@ def genetic_algorithm(parameters, initialize_population, crossover, mutate):
     population_size = parameters["population_size"]
     population = initialize_population(population_size, parameters["dimensions"])
 
-    best_individual = {"fitness": float("-inf")}  # TODO may not need to initialize this
+    best_individual = { "fitness": float("-inf") }  # TODO may not need to initialize this
 
     generations = 0
     while generations < parameters["number_of_generations"]:
         print 'generations', generations
-        candidate_best_individual = evaluate(population)  # each individual gets a fitness score before we go to pick parents
+        candidate_best_individual = evaluate(population, parameters["minimization"])  # each individual gets a fitness score before we go to pick parents
 
         if candidate_best_individual["fitness"] > best_individual["fitness"]:
             best_individual = candidate_best_individual
@@ -246,7 +249,7 @@ def sphere(shift, xs):
 binary_ga_parameters = {
     "f": lambda xs: sphere(0.5, xs),
     "minimization": True,  # TODO: something with this
-    "mutation_rate": .9,
+    "mutation_rate": .05,
     "crossover_rate": .9,
     "population_size": 10000,  # 50-500s of individuals
     "dimensions": 10,  # (given for this problem),
