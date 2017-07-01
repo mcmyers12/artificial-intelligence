@@ -248,7 +248,7 @@ binary_ga_parameters = {
     "minimization": True,  # TODO: something with this
     "mutation_rate": .9,
     "crossover_rate": .9,
-    "population_size": 5000,  # 50-500s of individuals
+    "population_size": 10000,  # 50-500s of individuals
     "dimensions": 10,  # (given for this problem),
     "number_of_generations": 100,  # TODO play with this
     "minimization_fitness_function": minimization_fitness
