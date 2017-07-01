@@ -110,13 +110,13 @@ def select_parent(random_selection):
 # Tournament selection: pick 7 (or so) completely (uniformly) at random, choose one with highest fitness
 # Ensures parent 1 and 2 are different by removing parent 1 from randomly 7 selected values for parent 2, if there
 def select_parents_tournament_selection(population):
-    population_copy = copy.deepcopy(population)  ##TODO may not need to copy
-    random.shuffle(population_copy)
-    random_selection = population_copy[0:7]
+    #population_copy = copy.deepcopy(population)  ##TODO may not need to copy
+    random.shuffle(population)
+    random_selection = population[0:7]
     parent1 = select_parent(random_selection)
 
-    random.shuffle(population_copy)
-    random_selection = population_copy[0:7]
+    random.shuffle(population)
+    random_selection = population[0:7]
     if parent1 in random_selection:
         random_selection.remove(parent1)
     parent2 = select_parent(random_selection)
@@ -186,11 +186,12 @@ def genetic_algorithm(parameters, initialize_population, crossover, mutate):
 
     generations = 0
     while generations < parameters["number_of_generations"]:
-        candidate_best_individual = evaluate(
-            population)  # each individual gets a fitness score before we go to pick parents
+        print 'generations', generations
+        candidate_best_individual = evaluate(population)  # each individual gets a fitness score before we go to pick parents
 
         if candidate_best_individual["fitness"] > best_individual["fitness"]:
             best_individual = candidate_best_individual
+            print 'fitness', best_individual["fitness"]
 
         next_population = []
         for i in range(population_size / 2):
@@ -230,9 +231,9 @@ binary_ga_parameters = {
     "minimization": True,  # TODO: something with this
     "mutation_rate": .9,
     "crossover_rate": .9,
-    "population_size": 500,  # 50-500s of individuals
+    "population_size": 1000,  # 50-500s of individuals
     "dimensions": 10,  # (given for this problem),
-    "number_of_generations": 3,  # TODO play with this
+    "number_of_generations": 200,  # TODO play with this
     "minimization_fitness_function": minimization_fitness
     # put other parameters in here.
 }
