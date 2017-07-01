@@ -1,5 +1,6 @@
 from StringIO import StringIO
 import random
+from random import gauss
 import copy
 
 
@@ -55,21 +56,16 @@ def binary_ga_initialize_population(population_size, dimensions):
     return population
 
 
-'''Fitness Score:
-1. Convert to binary representation (genotype) to 10 floating point numbers (phenotype).
-2. Apply the objective function (shifted sphere).
-3. If the objective function is a maximization problem, you have a fitness score. If it is a minimization problem, you have to convert it to a fitness score.
+def real_ga_initialize_population(population_size, dimensions):
+    population = []
+    for i in range(population_size):
+        individual = {}
+        phenotype = initialize_phenotype(dimensions)
+        individual["phenotype"] = phenotype
+        individual["genotype"] = copy.deepcopy(phenotype)
+        population.append(individual)
 
-For the decimal case,
-
-1. Genotype and phenotype are identical.
-2. Apply the objective function (shifted sphere).
-3. If the objective function is a maximization problem, you have a fitness score. If it is a minimization problem, you have to convert it to a fitness score.
-
-The fitness function is only defined in terms of the phenotype. You must provide a decoding function to translate between genotype and phenotype. This is "just like" the real world...you have genes, they are expressed as hands, eyes, eye color, height, etc...and those interact with the world...not the genes.
-
-Also make sure to remember that you may have to translate the objective function into a fitness function as well. GA's "only" do maximization.
-'''
+    return population
 
 
 def calculate_fitness(individual, minimization):
@@ -84,7 +80,7 @@ def calculate_fitness(individual, minimization):
 
 # each individual should contain at least fields for its genome and fitness score
 # evaluate applies the fitness function to each individual (make sure to transform fitness score)
-def evaluate(population, minimization):
+def evaluate_population(population, minimization):
     best_fitness = float("-inf")
     best_individual = None
     for individual in population:
@@ -164,6 +160,27 @@ def binary_ga_crossover(parent1, parent2):
     child2["phenotype"] = binary_ga_genotype_to_phenotype(child2_genotype)
 
     return child1, child2
+    
+
+def real_ga_crossover(parent1, parent2):
+    child1 = {}
+    child2 = {}
+
+    parent1_genotype = parent1["genotype"]
+    parent2_genotype = parent2["genotype"]
+
+    crossover_index = random.randint(0, len(parent1_genotype) - 1)
+
+    child1_genotype = parent1_genotype[:crossover_index] + parent2_genotype[crossover_index:]
+    child2_genotype = parent2_genotype[:crossover_index] + parent1_genotype[crossover_index:]
+
+    child1["genotype"] = child1_genotype
+    child2["genotype"] = child2_genotype
+
+    child1["phenotype"] = child1_genotype
+    child2["phenotype"] = child2_genotype
+
+    return child1, child2
 
 
 # randomly pick a mutation site, randomly pick a mutation
@@ -172,7 +189,17 @@ def binary_ga_mutate(child):
     mutation_site = random.randint(0, len(genotype) - 1)
     mutation = random.randint(0, 1)
     genotype[mutation_site] = mutation
+    
 
+#use gaussian distribution, selecting 1.7 as the standard deviation, since this is 5.12 / 3
+def real_ga_mutate(child):
+    genotype = child["genotype"]
+    mutation_site = random.randint(0, len(genotype) - 1)
+    mutation = gauss(0, 1.7)
+    while mutation > 5.12 or mutation < -5.12:
+        mutation = gauss(0, 1.7)
+    genotype[mutation_site] = mutation
+    
 
 def reproduce(parent1, parent2, crossover_rate, mutation_rate, crossover, mutate):
     crossover_chance = random.uniform(0, 1)
@@ -194,11 +221,12 @@ def reproduce(parent1, parent2, crossover_rate, mutation_rate, crossover, mutate
 
 # Create a population, evaluate it, select parents, apply crossover and mutation, repeat until the number of desired generations have been generated
 # Use higher order functions
+
 # Print out the best individual of each generation including the generation number,
-# genotype (the representation), phenotype (the actual value), the fitness (based on your fitness function transformation)
-# and the function value (for the shifted sphere) if passed a DEBUG=True flag.
+    # genotype (the representation), phenotype (the actual value), the fitness (based on your fitness function transformation)
+    # and the function value (for the shifted sphere) if passed a DEBUG=True flag.
 # Keep the tracing limited - print the best individual of the population every i generations (e.g. every 10)
-# should see about 50 lines of tracing to show the best individual and their fitness
+    # should see about 50 lines of tracing to show the best individual and their fitness
 def genetic_algorithm(parameters, initialize_population, crossover, mutate):
     population_size = parameters["population_size"]
     population = initialize_population(population_size, parameters["dimensions"])
@@ -208,7 +236,7 @@ def genetic_algorithm(parameters, initialize_population, crossover, mutate):
     generations = 0
     while generations < parameters["number_of_generations"]:
         print 'generations', generations
-        candidate_best_individual = evaluate(population, parameters["minimization"])  # each individual gets a fitness score before we go to pick parents
+        candidate_best_individual = evaluate_population(population, parameters["minimization"])  # each individual gets a fitness score before we go to pick parents
 
         if candidate_best_individual["fitness"] > best_individual["fitness"]:
             best_individual = candidate_best_individual
@@ -217,8 +245,7 @@ def genetic_algorithm(parameters, initialize_population, crossover, mutate):
         next_population = []
         for i in range(population_size / 2):
             parent1, parent2 = select_parents_tournament_selection(population)
-            child1, child2 = reproduce(parent1, parent2, parameters["crossover_rate"], parameters["mutation_rate"],
-                                       crossover, mutate)
+            child1, child2 = reproduce(parent1, parent2, parameters["crossover_rate"], parameters["mutation_rate"], crossover, mutate)
 
             next_population.append(child1)
             next_population.append(child2)
@@ -236,7 +263,7 @@ def binary_ga(parameters):
 
 
 def real_ga(parameters):
-    pass
+    genetic_algorithm(parameters, real_ga_initialize_population, real_ga_crossover, real_ga_mutate)
 
 
 def sphere(shift, xs):
@@ -248,35 +275,29 @@ def sphere(shift, xs):
 # Should not take long at all to converge
 binary_ga_parameters = {
     "f": lambda xs: sphere(0.5, xs),
-    "minimization": True,  # TODO: something with this
+    "minimization": True,  
     "mutation_rate": .05,
     "crossover_rate": .9,
     "population_size": 10000,  # 50-500s of individuals
     "dimensions": 10,  # (given for this problem),
     "number_of_generations": 100,  # TODO play with this
-    "minimization_fitness_function": minimization_fitness
     # put other parameters in here.
 }
 
-binary_ga(binary_ga_parameters)
+#binary_ga(binary_ga_parameters)
 
-'''Fitness Score:
-1. Convert to binary representation (genotype) to 10 floating point numbers (phenotype).
-2. Apply the objective function (shifted sphere).
-3. If the objective function is a maximization problem, you have a fitness score. If it is a minimization problem, you have to convert it to a fitness score.
 
-For the decimal case,
-
-1. Genotype and phenotype are identical.
-2. Apply the objective function (shifted sphere).
-3. If the objective function is a maximization problem, you have a fitness score. If it is a minimization problem, you have to convert it to a fitness score.
-
-The fitness function is only defined in terms of the phenotype. You must provide a decoding function to translate between genotype and phenotype. This is "just like" the real world...you have genes, they are expressed as hands, eyes, eye color, height, etc...and those interact with the world...not the genes.
-
-Also make sure to remember that you may have to translate the objective function into a fitness function as well. GA's "only" do maximization.
-
-There's no real answer to "how many generations are enough". In this case you know because you know what the minimum actually is. (You do know, right?) NO I DON'T KNOW
-'''
+real_ga_parameters = {
+    "f": lambda xs: sphere(0.5, xs),
+    "minimization": True,  
+    "mutation_rate": .05,
+    "crossover_rate": .9,
+    "population_size": 200000,  # 50-500s of individuals
+    "dimensions": 10,  # (given for this problem),
+    "number_of_generations": 600,  # TODO play with this
+    # put other parameters in here.
+}
+real_ga(real_ga_parameters)
 
 
 
