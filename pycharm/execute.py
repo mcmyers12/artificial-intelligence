@@ -185,7 +185,8 @@ def genetic_algorithm(parameters, initialize_population, crossover, mutate):
     best_individual = {"fitness": float("-inf")}  # TODO may not need to initialize this
 
     generations = 0
-    while generations < parameters["number_of_generations"]:
+    limit = parameters["number_of_generations"]
+    while generations < limit:
         candidate_best_individual = evaluate(
             population)  # each individual gets a fitness score before we go to pick parents
 
@@ -230,7 +231,7 @@ binary_ga_parameters = {
     "minimization": True,  # TODO: something with this
     "mutation_rate": .9,
     "crossover_rate": .9,
-    "population_size": 500,  # 50-500s of individuals
+    "population_size": 5,  # 50-500s of individuals
     "dimensions": 10,  # (given for this problem),
     "number_of_generations": 3,  # TODO play with this
     "minimization_fitness_function": minimization_fitness
