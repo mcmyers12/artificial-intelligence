@@ -102,5 +102,5 @@ ENV/
 
 .DS_Store
 
-pycharm/.idea/workspace.xml
+*pycharm/.idea/workspace.xml
 
