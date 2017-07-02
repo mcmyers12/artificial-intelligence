@@ -105,9 +105,9 @@ def select_parent(random_selection):
 
 
 
-def get_random_indices(population):
+def get_random_indices(population, tournament_selection_number):
     random_indices = []
-    while len(random_indices) < 7:
+    while len(random_indices) < tournament_selection_number:
         random_index = random.randint(0, (len(population) - 1))
         if random_index not in random_indices:
             random_indices.append(random_index)
@@ -118,9 +118,9 @@ def get_random_indices(population):
 # Roulette wheel: each individual's fitness is a proportion of total fitness (more in notes)
 # Tournament selection: pick 7 (or so) completely (uniformly) at random, choose one with highest fitness
 # Ensures parent 1 and 2 are different by removing parent 1 from randomly 7 selected values for parent 2, if there
-def select_parents_tournament_selection(population):
+def select_parents_tournament_selection(population, tournament_selection_number):
     #population_copy = copy.deepcopy(population)  ##TODO may not need to copy
-    random_indices = get_random_indices(population)
+    random_indices = get_random_indices(population, tournament_selection_number)
      
     random_individuals = []       
     for index in random_indices:
@@ -128,7 +128,7 @@ def select_parents_tournament_selection(population):
     
     parent1 = select_parent(random_individuals)
     
-    random_indices = get_random_indices(population)
+    random_indices = get_random_indices(population, tournament_selection_number)
      
     random_individuals = []       
     for index in random_indices:
@@ -244,7 +244,7 @@ def genetic_algorithm(parameters, initialize_population, crossover, mutate):
 
         next_population = []
         for i in range(population_size / 2):
-            parent1, parent2 = select_parents_tournament_selection(population)
+            parent1, parent2 = select_parents_tournament_selection(population, parameters["tournament_selection_number"])
             child1, child2 = reproduce(parent1, parent2, parameters["crossover_rate"], parameters["mutation_rate"], crossover, mutate)
 
             next_population.append(child1)
@@ -280,10 +280,9 @@ binary_ga_parameters = {
     "crossover_rate": .9,
     "population_size": 10000,  # 50-500s of individuals
     "dimensions": 10,  # (given for this problem),
-    "number_of_generations": 100,  # TODO play with this
-    # put other parameters in here.
+    "number_of_generations": 100,  
+    "tournament_selection_number": 7
 }
-
 #binary_ga(binary_ga_parameters)
 
 
@@ -292,10 +291,10 @@ real_ga_parameters = {
     "minimization": True,  
     "mutation_rate": .05,
     "crossover_rate": .9,
-    "population_size": 200000,  # 50-500s of individuals
+    "population_size": 5000,  # 50-500s of individuals
     "dimensions": 10,  # (given for this problem),
-    "number_of_generations": 600,  # TODO play with this
-    # put other parameters in here.
+    "number_of_generations": 600,  
+    "tournament_selection_number": 100
 }
 real_ga(real_ga_parameters)
 
