@@ -184,7 +184,7 @@ def real_ga_crossover(parent1, parent2):
 
 
 # randomly pick a mutation site, randomly pick a mutation
-def binary_ga_mutate(child):
+def binary_ga_mutate(child, parameters):
     genotype = child["genotype"]
     mutation_site = random.randint(0, len(genotype) - 1)
     mutation = random.randint(0, 1)
@@ -192,29 +192,31 @@ def binary_ga_mutate(child):
     
 
 #use gaussian distribution, selecting 1.7 as the standard deviation, since this is 5.12 / 3
-def real_ga_mutate(child):
+def real_ga_mutate(child, parameters):
     genotype = child["genotype"]
     mutation_site = random.randint(0, len(genotype) - 1)
-    mutation = gauss(0, 1.7)
+    mutation = gauss(0, parameters["sigma"])
     while mutation > 5.12 or mutation < -5.12:
-        mutation = gauss(0, 1.7)
+        mutation = gauss(0, parameters["sigma"])
     genotype[mutation_site] = mutation
     
 
-def reproduce(parent1, parent2, crossover_rate, mutation_rate, crossover, mutate):
+def reproduce(parent1, parent2, parameters, crossover, mutate):
     crossover_chance = random.uniform(0, 1)
+    crossover_rate = parameters["crossover_rate"]
+    mutation_rate = parameters["mutation_rate"]
     if crossover_chance > crossover_rate:
         return parent1, parent2
 
     child1, child2 = crossover(parent1, parent2)
 
     child1_mutation_chance = random.uniform(0, 1)
-    if child1_mutation_chance < crossover_rate:
-        mutate(child1)
+    if child1_mutation_chance < mutation_rate:
+        mutate(child1, parameters)
 
     child2_mutation_chance = random.uniform(0, 1)
-    if child2_mutation_chance < crossover_rate:
-        mutate(child2)
+    if child2_mutation_chance < mutation_rate:
+        mutate(child2, parameters)
 
     return child1, child2
 
@@ -245,7 +247,7 @@ def genetic_algorithm(parameters, initialize_population, crossover, mutate):
         next_population = []
         for i in range(population_size / 2):
             parent1, parent2 = select_parents_tournament_selection(population, parameters["tournament_selection_number"])
-            child1, child2 = reproduce(parent1, parent2, parameters["crossover_rate"], parameters["mutation_rate"], crossover, mutate)
+            child1, child2 = reproduce(parent1, parent2, parameters, crossover, mutate)
 
             next_population.append(child1)
             next_population.append(child2)
@@ -283,7 +285,7 @@ binary_ga_parameters = {
     "number_of_generations": 100,  
     "tournament_selection_number": 7
 }
-#binary_ga(binary_ga_parameters)
+binary_ga(binary_ga_parameters)
 
 
 real_ga_parameters = {
@@ -294,7 +296,8 @@ real_ga_parameters = {
     "population_size": 5000,  # 50-500s of individuals
     "dimensions": 10,  # (given for this problem),
     "number_of_generations": 600,  
-    "tournament_selection_number": 100
+    "tournament_selection_number": 7,
+    "sigma": 1.7
 }
 real_ga(real_ga_parameters)
 
