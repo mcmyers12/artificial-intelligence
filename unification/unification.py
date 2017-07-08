@@ -43,39 +43,28 @@ def extract_dictionaries(tuple_input, dictionaries):
             dictionaries.update(item)
         elif type(item) == tuple:
             extract_dictionaries(item, dictionaries)
-        else:
-            print 'unhandled type: ', type(item)
-    
+        
     return dictionaries
 
+
 def composition_of(result1, result2):
-    #print "result1: ", result1
-    #print "result2: ", result2
     composed_results = {}
     if type(result1) == tuple:
         dictionaries = extract_dictionaries(result1, {})
         composed_results.update(dictionaries)
     elif type(result1) == dict:
         composed_results.update(result1)
-    else:
-        print 'unhandled type: ', type(result1)
-        
+          
     if type(result2) == tuple:
         dictionaries = extract_dictionaries(result2, {})
         composed_results.update(dictionaries)
     elif type(result2) == dict:
         composed_results.update(result2)
-    else:
-        print 'unhandled type: ', type(result2)
-     
-    #print 'composed_results: ', composed_results   
+        
     return composed_results
         
 
 def apply(result1, list_expression1, list_expression2):
-    #print "result1: ", result1
-    #print "list_expression1: ", list_expression1
-    #print "list_expression2: ", list_expression2
     for variable in result1:
         if (variable in list_expression1):
             replace_index = list_expression1.index(variable)
@@ -85,6 +74,14 @@ def apply(result1, list_expression1, list_expression2):
             replace_index = list_expression2.index(variable)
             list_expression2[replace_index] = result1[variable]
 
+
+def get_first_element(list_expression):
+    if list_expression and type(list_expression) == list:
+        return list_expression.pop(0)
+    else: 
+        return list_expression
+    
+    
 #unification can return None (if unification completely fails), 
     #{} (the empty substitution list) 
     #or a substitution list that has variables as keys and substituted values as values, like {"?x": "Fred"}.
@@ -107,19 +104,10 @@ def unification(list_expression1, list_expression2):
         else:
             return { list_expression2 : list_expression1 }
     
-    if list_expression1 and type(list_expression1) == list:
-        first1 = list_expression1.pop(0)
-    else: 
-        first1 = list_expression1
-    #else:
-    #    first1=[]
-    if list_expression2 and type(list_expression2) == list:
-        first2 = list_expression2.pop(0)
-    else:
-        first2 = list_expression2
+    first1 = get_first_element(list_expression1)
+    first2 = get_first_element(list_expression2)
         
     result1 = unification(first1, first2)
-    
     if result1 == None:
         return None
         
@@ -128,9 +116,7 @@ def unification(list_expression1, list_expression2):
     result2 = unification(list_expression1, list_expression2)
     if result2 == None:
         return None
-    
-    
-    
+
     return composition_of(result1, result2)
 
 
