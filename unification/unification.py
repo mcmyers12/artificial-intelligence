@@ -37,14 +37,40 @@ def is_constant( exp):
     return isinstance( exp, str) and not is_variable( exp)
 
 
-def composition_of(result1, result2):
-    print
-    print
-    print "result1: ", result1
-    print "result2: ", result2
-    print
-    print
+def extract_dictionaries(tuple_input, dictionaries):
+    for item in tuple_input:
+        if type(item) == dict:
+            dictionaries.update(item)
+        elif type(item) == tuple:
+            extract_dictionaries(item, dictionaries)
+        else:
+            print 'unhandled type: ', type(item)
+    
+    return dictionaries
 
+def composition_of(result1, result2):
+    #print "result1: ", result1
+    #print "result2: ", result2
+    composed_results = {}
+    if type(result1) == tuple:
+        dictionaries = extract_dictionaries(result1, {})
+        composed_results.update(dictionaries)
+    elif type(result1) == dict:
+        composed_results.update(result1)
+    else:
+        print 'unhandled type: ', type(result1)
+        
+    if type(result2) == tuple:
+        dictionaries = extract_dictionaries(result2, {})
+        composed_results.update(dictionaries)
+    elif type(result2) == dict:
+        composed_results.update(result2)
+    else:
+        print 'unhandled type: ', type(result2)
+     
+    #print 'composed_results: ', composed_results   
+    return composed_results
+        
 
 def apply(result1, list_expression1, list_expression2):
     #print "result1: ", result1
@@ -103,9 +129,9 @@ def unification(list_expression1, list_expression2):
     if result2 == None:
         return None
     
-    #composition_of(result1, result2)
     
-    return result1, result2
+    
+    return composition_of(result1, result2)
 
 
 def unify( s_expression1, s_expression2):
