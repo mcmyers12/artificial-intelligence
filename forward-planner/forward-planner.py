@@ -86,51 +86,6 @@ def parse_s_expressions(start_state, goal, actions):
 
     return start_state, goal, new_actions
 
-
-def apply_action(state, adds, deletes):
-    successor_state = copy.deepcopy(state)
-    successor_state.append(adds)
-
-    if deletes in successor_state:
-        successor_state.remove(deletes)
-
-    return successor_state
-
-
-# Generate successor states by applying actions to the current state
-# There is an inner level of search in this generation
-# We know if an action applies in a state IF the preconditions unify with the state
-# Check each predicate in the conditions to see if it unifies with the state
-# If it does, use the substitution list on the action, the add and delete lists and create the successor state based on them
-# There may be more than one way to unify an action with the current state
-# Search for all successful unifications of the candidate action and the current state
-# Unification can be seen as state space search by trying to unify the first precondition with the current state,
-# progressively working your way through the precondition list
-# If you fail at any point, you may need to backtrack - there might have been another unification of that predicate that would succeed
-'''def get_successors(state, actions):
-    successor_states = []
-    for action in actions:
-        preconditions = actions[action]['conditions']
-
-        for precondition in preconditions:
-            unifications = find_all_unifications(precondition, state)
-            if unifications:
-                for unification_dict in unifications:
-
-                    adds, deletes = apply_substitutions(actions[action], unification_dict)
-                    successor_state = apply_action(state, adds, deletes)
-
-                    if successor_state not in successor_states:
-                        successor_states.append(successor_state)
-
-            else:
-                # TODO backtrack
-                pass
-
-    return successor_states
-'''
-
-
 def get_variables_to_unify(preconditions):
     variables = []
     for expression_list in preconditions:
@@ -291,6 +246,18 @@ def apply_unifications(state, action, actions, unification_dict):
         return None, None
 
     return new_state, action
+
+
+# Generate successor states by applying actions to the current state
+# There is an inner level of search in this generation
+# We know if an action applies in a state IF the preconditions unify with the state
+# Check each predicate in the conditions to see if it unifies with the state
+# If it does, use the substitution list on the action, the add and delete lists and create the successor state based on them
+# There may be more than one way to unify an action with the current state
+# Search for all successful unifications of the candidate action and the current state
+# Unification can be seen as state space search by trying to unify the first precondition with the current state,
+# progressively working your way through the precondition list
+# If you fail at any point, you may need to backtrack - there might have been another unification of that predicate that would succeed
 
 
 def get_successors(state, actions):
