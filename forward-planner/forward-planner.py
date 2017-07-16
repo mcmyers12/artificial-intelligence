@@ -184,14 +184,15 @@ def find_next_precondition(preconditions):
        
 
 def inner_DFS(state, action, actions):
-    all_preconditions = []
     all_unifications = []
 
     preconditions = copy.deepcopy(actions[action]['conditions'])
-    start_unifications = find_all_unifications(preconditions[0], state)
+    start_unifications = find_all_unifications(preconditions[0], state)[0]
     
-    stack = [start_unifications[0]] 
-    visited = [start_unifications[0]]
+    start_preconditions = apply_substitutions(preconditions, start_unifications)
+    
+    stack = [(start_unifications, start_preconditions)] 
+    visited = [start_unifications]
     
     while stack:
         
@@ -203,20 +204,23 @@ def inner_DFS(state, action, actions):
         pp.pprint(visited)
         print
         
-        current_unifications = stack.pop()
+        (current_unifications, current_preconditions) = stack.pop()
         
-        '''print 'current_unifications'
+        if current_unifications not in all_unifications:
+            all_unifications.append(current_unifications)
+        
+        print 'current_unifications'
         pp.pprint(current_unifications)
-        print'''
-        
-        new_preconditions = apply_substitutions(preconditions, current_unifications) 
-        all_preconditions.append(new_preconditions)
-        
-        print 'new_preconditions'
-        pp.pprint(new_preconditions)
         print
         
-        next_precondition_to_unify = find_next_precondition(new_preconditions)
+        #new_preconditions = apply_substitutions(preconditions, current_unifications) 
+        #all_preconditions.append(new_preconditions)
+        
+        print 'current_preconditions'
+        pp.pprint(current_preconditions)
+        print
+        
+        next_precondition_to_unify = find_next_precondition(current_preconditions)
         
         print 'next_precondition_to_unify'
         print next_precondition_to_unify
@@ -231,16 +235,17 @@ def inner_DFS(state, action, actions):
         
             for unification in unifications:
                 if unification not in visited:
-                    stack.append(unification)
+                    new_preconditions = apply_substitutions(current_preconditions, unification)
+                    stack.append((unification, new_preconditions))
                     visited.append(unification)
         
         
-        print '\n\n\nall_preconditions'
-        pp.pprint(all_preconditions)
+        print '\n\n\nall_unifications'
+        pp.pprint(all_unifications)
         print
 
 start_state, goal, actions = parse_s_expressions(start_state, goal, actions)
-inner_DFS(start_state, 'drive', actions)
+inner_DFS(start_state, 'buy', actions)
 
         
         
