@@ -4,6 +4,12 @@ import copy
 
 pp = pprint.PrettyPrinter(indent=4)
 
+'''
+['drive', 'Me', 'Home', 'Store'],
+['buy', 'Me', 'Store', 'Drill'],
+['drive', 'Me', 'Store', 'Home'],
+'''
+
 start_state = [
     "(item Drill)",
     "(place Home)",
@@ -81,8 +87,6 @@ def parse_s_expressions(start_state, goal, actions):
     return start_state, goal, new_actions
 
 
-
-
 def apply_action(state, adds, deletes):
     successor_state = copy.deepcopy(state)
     successor_state.append(adds)
@@ -103,7 +107,7 @@ def apply_action(state, adds, deletes):
 # Unification can be seen as state space search by trying to unify the first precondition with the current state,
 # progressively working your way through the precondition list
 # If you fail at any point, you may need to backtrack - there might have been another unification of that predicate that would succeed
-def get_successors(state, actions):
+'''def get_successors(state, actions):
     successor_states = []
     for action in actions:
         preconditions = actions[action]['conditions']
@@ -124,6 +128,7 @@ def get_successors(state, actions):
                 pass
 
     return successor_states
+'''
 
 
 def get_variables_to_unify(preconditions):
@@ -216,7 +221,7 @@ combinations
     {   '?seller': 'Store'},
     {   '?purchaser': 'Me'},
     {   '?seller': 'Home'}]
-    
+
 combinations
 {'?purchaser': ['Me'], '?seller': ['Store', 'Home'], '?item': ['Drill']}
 
@@ -237,17 +242,17 @@ def get_separate_unifications(state, action, actions, all_unifications):
     print 'combinations'
     print combinations
     print
-    
+
     if action == 'drive':
-        #SWITCH ordering of from, to to mix it up
+        # SWITCH ordering of from, to to mix it up
         if combinations['?from'] == combinations['?to']:
             temp = combinations['?from'][0]
             combinations['?from'][0] = combinations['?from'][1]
             combinations['?from'][1] = temp
-    
+
     unification1 = {}
     unification2 = {}
-    
+
     for key in combinations:
         if len(combinations[key]) > 1:
             unification1[key] = combinations[key][0]
@@ -255,18 +260,17 @@ def get_separate_unifications(state, action, actions, all_unifications):
         elif len(combinations[key]) == 1:
             unification1[key] = combinations[key][0]
             unification2[key] = combinations[key][0]
-        
+
     return [unification1, unification2]
 
 
-
-
-def apply_adds_deletes(state, action, actions, unification_dict):
+def apply_unifications(state, action, actions, unification_dict):
     adds = copy.deepcopy(actions[action]['add'][0])
     deletes = copy.deepcopy(actions[action]['delete'][0])
     new_state = copy.deepcopy(state)
+    action = copy.deepcopy(actions[action]['action'])
 
-    for unified_variable in unification_dict:  #TODO make sure these substitutions are actually being made
+    for unified_variable in unification_dict:  # TODO make sure these substitutions are actually being made
         for i in range(len(adds)):
             if adds[i] == unified_variable:
                 adds[i] = unification_dict[unified_variable]
@@ -275,59 +279,81 @@ def apply_adds_deletes(state, action, actions, unification_dict):
             if deletes[i] == unified_variable:
                 deletes[i] = unification_dict[unified_variable]
 
+        for i in range(len(action)):
+            if action[i] == unified_variable:
+                action[i] = unification_dict[unified_variable]
+
     new_state.append(adds)
-    
+
     if deletes in new_state:
         new_state.remove(deletes)
     else:
-        return None
+        return None, None
 
-    return new_state  
-    
-           
+    return new_state, action
+
+
 def get_successors(state, actions):
     successor_states = []
+    actions_taken = []
     for action in actions:
         print '\naction: ', action
         all_unifications = find_all_unifications(state, action, actions)
         print
-        
+
         separate_unifications = get_separate_unifications(state, action, actions, all_unifications)
 
-        
         for unification_dict in separate_unifications:
-            print 'unification_dict'       
+            print 'unification_dict'
             pp.pprint(unification_dict)
             print
-            new_state = apply_adds_deletes(state, action, actions, unification_dict)
-            if new_state:
+            new_state, action_taken = apply_unifications(state, action, actions, unification_dict)
+            if new_state and action_taken:
+                actions_taken.append(action_taken)
                 successor_states.append(new_state)
-        
+
         print   'successor_states'
         print successor_states
         print
+
+    return successor_states, actions_taken
+
+
+def construct_path(goal, state_parent_pairs):
+    print 'state_parent_pairs'
+    pp.pprint(state_parent_pairs)  # each is (state, parent_state)
+    print
+
+    path = []
+
+    current = goal
+
+    '''while current:
+        for tup in state_parent_pairs:
+            if tup[0] == current:
+                current = tup[1]
+                action = tup[2]
+
+                path.insert(0, action)
+
+                # current = state_parent_dict[current]
+    '''
     
-    return successor_states
-
-
-
-def construct_path():
-    print '\n\n\n\ndone'
-
-
+    for tup in state_parent_pairs:
+        if tup[2]:
+            path.append(tup[2])
+    return path
 
 
 # So you need to implement `forward_planner` as described above. `start_state`, `goal` and `actions` should all have the layout above and be s-expressions.
 # Return the plan as a **List of instantiated actions**. If `debug=True`, you should print out the intermediate states of the plan as well.
 def forward_planner(start_state, goal, actions, debug=False):
     start_state, goal, actions = parse_s_expressions(start_state, goal, actions)
-    frontier = []
+    frontier = [start_state]
     explored = []
-    path = []
+    state_parent_tuples = [(start_state, None, None)]
 
     # states = {start: [0, heuristic(start, goal), None]}  # f(n), cost so far, parent
-
-    frontier.append(start_state)
 
     it = 0
     while frontier:
@@ -344,35 +370,39 @@ def forward_planner(start_state, goal, actions, debug=False):
             print 'explored'
             pp.pprint(explored)
             print
-            return construct_path()
+            return construct_path(current_state, state_parent_tuples)
 
-        children = get_successors(current_state, actions)
+        children, actions_taken = get_successors(current_state, actions)
 
         print '\t\tchildren:'
-        for child in children:
+        for i in range(len(children)):
 
-            print '\t\t\t', child
+            print '\t\t\t', children[i]
 
-            if child not in explored and child not in frontier:
-                frontier.insert(0, child)
+            if children[i] not in explored and children[i] not in frontier:
+                state_parent_tuples.append((children[i], current_state, actions_taken[i]))
+                # state_parent_dict[child] = current_state
+                frontier.insert(0, children[i])
 
         explored.append(current_state)
-
 
     return []
 
 
-#start_state, goal, actions = parse_s_expressions(start_state, goal, actions)
-#get_successors(start_state, actions)
+# start_state, goal, actions = parse_s_expressions(start_state, goal, actions)
+# get_successors(start_state, actions)
 
 
-forward_planner( start_state, goal, actions)
+# forward_planner( start_state, goal, actions)
 
 
+
+plan = forward_planner(start_state, goal, actions)
+print
+print
+print 'plan:'
+pp.pprint(plan)
 '''
-plan = forward_planner( start_state, goal, actions)
-print plan
-
 plan_with_states = forward_planner( start_state, goal, actions, debug=True)
 print plan_with_states
 '''
