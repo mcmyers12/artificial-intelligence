@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import math
 import sys
 
 
@@ -111,22 +112,21 @@ You can make generate_data as sophisticated as you like. But it should at least 
 generate_data( clean_data, 100, "hills")
 generates 100 hills, 100 not hills and has transformed the String labels into 1 and 0, respectively.
 '''
-def generate_data(data, n, label):
-    data_out = []
-    
-    #Create n hills, with equal number of different types of hills blurred
+def generate_hills(data, n, label, data_out):
     hill_index = 0
     for i in range(n):
         blurred_hill = blur(clean_data[label][hill_index])
         blurred_hill[-1] = 1.0
+        blurred_hill.insert(0, 1.0) #Add x_0 of 1
         data_out.append(blurred_hill)
         
         if hill_index < 3:
             hill_index += 1
         else:
             hill_index = 0
-             
-    #Create n not hills   
+
+
+def generate_not_hills(data, n, label, data_out):
     not_hill_data = []
     for key in data:
         if key != label:
@@ -137,12 +137,24 @@ def generate_data(data, n, label):
     for i in range(n):
         blurred_not_hill = blur(not_hill_data[not_hill_index])
         blurred_not_hill[-1] = 0.0
+        blurred_not_hill.insert(0, 1.0) #Add x_0 of 1
         data_out.append(blurred_not_hill)
         
         if not_hill_index < 6:
             not_hill_index += 1
         else:
             not_hill_index = 0
+            
+            
+
+def generate_data(data, n, label):
+    data_out = []
+    
+    #Create n hills, with equal number of different types of hills blurred
+    generate_hills(data, n, label, data_out)
+             
+    #Create n not hills   
+    generate_not_hills(data, n, label, data_out)
         
     return data_out
 
@@ -160,9 +172,50 @@ for result in results:
     print
 
 
-# Use `learn_model` to learn a logistic regression model for classifying sensor images as "hills" or "not hills". Use your `generate_data` function to generate a training set with 100 hills examples. **Set Verbose to True**
-def learn_model( data, verbose=False):
+def dot_product(thetas, xs):
+    z = 0
+    xs_no_y = xs[0:len(xs) - 1]
+    if len(thetas) != len(xs_no_y):
+        print '\n\n\nthetas length different than xs\n\n\n'
+    
+    for i in range(len(thetas)):
+        z += thetas[i] * xs[i]
+        
+    return z 
+
+
+def calculate_yhat(thetas, xs):
+    z = dot_product(thetas, xs)
+    return 1 / (1 + math.e ** (-z))
+    
+    
+    
+def calculate_error(thetas, train_data):
     pass
+    
+
+def derivative(j, thetas, train_data):
+    pass
+
+
+
+# Use `learn_model` to learn a logistic regression model for classifying sensor images as "hills" or "not hills". 
+# Use your `generate_data` function to generate a training set with 100 hills examples. **Set Verbose to True**
+# learn_model returns the List of Thetas.
+'''def learn_model(train_data, verbose=False):
+    #initialize thetas to random values between [-1, 1]
+    thetas = [random.uniform(-1,1) for i in range(len(train_data[0]))]
+    previous_error = 0.0
+    current_error = calculate_error(thetas, train_data)
+    while abs(current_error - previous_error) < epsilon
+        new_thetas = []
+        for j = 0 to m
+            new_thetas[j] = thetas[j] - alpha * derivative(j, thetas, train_data)
+        thetas = new_thetas
+        previous_error = current_error
+        current_error = calculate_error(thetas, train_data)
+
+
 
 train_data = generate_data( clean_data, 100, "hills")
 model = learn_model( train_data, True)
@@ -181,4 +234,4 @@ print results
 # Using the results above, show your confusion matrix for your model.
 def calculate_confusion_matrix( results):
     pass
-
+'''
