@@ -230,19 +230,19 @@ def derivative(j, thetas, train_data):
 def learn_model(train_data, verbose=False):
     epsilon = 1 / 10000000.0
     alpha = 0.1
-    m = len(train_data[0])  # TODO IS THIS REALLY M??
+    m = len(train_data[0]) - 1  # TODO IS THIS REALLY M??
     # initialize thetas to random values between [-1, 1]
-    thetas = [random.uniform(-1, 1) for i in range(m - 1)]  # TODO: should this be m?
+    thetas = [random.uniform(-1, 1) for i in range(m)]  # TODO: should this be m?
     print 'length thetas: ', len(thetas)
     previous_error = 0.0
     current_error = calculate_error(thetas, train_data)
     while abs(current_error - previous_error) > epsilon:
         print 'thetas:', thetas
 
-        new_thetas = [0 for i in range(m - 1)]
+        new_thetas = [0 for i in range(m)]
         # print 'length new thetas: ', len(new_thetas)
         # print 'new thetas: ', (new_thetas)
-        for j in range(m - 1):  # TODO is this right?
+        for j in range(m):  # TODO is this right?
             new_thetas[j] = thetas[j] - alpha * derivative(j, thetas, train_data)
         thetas = new_thetas
 
@@ -285,13 +285,49 @@ def apply_model(model, test_data, labeled=False):
             
     return results
 
+#The calculate_confusion_matrix takes the results of apply_model when labeled=True 
+#and prints a nice HTML version of a confusion matrix and include statistics for 
+#error rate, true positive rate and true negative rate.
+def calculate_confusion_matrix(results):
+    n = len(results)
+    TP = 0.0
+    FP = 0.0
+    FN = 0.0
+    TN = 0.0
+    for result in results:
+        actual = result[0]
+        predicted = result[1]
+        if actual == predicted:
+            if actual == 1:
+                TP += 1
+            else:
+                TN += 1
+        
+        else:
+            if predicted == 1:
+                FP += 1
+            else:
+                FN += 1
+    
+    print "TP: ", TP
+    print "FP: ", FP
+    print "FN: ", FN
+    print "TN: ", TN
+    
+    error = (FN + FP) / n
+    print "error: ", error
+    
+    true_positive_rate = TP / (TP + FN)
+    print "true_positive_rate: ", true_positive_rate
+
+    true_negative_rate = TN / (TN + FP)
+    print "true_negative_rate: ", true_negative_rate
 
 
 
 train_data = generate_data(clean_data, 100, "hills")
 #model = learn_model(train_data, True)
-model = [-19.69792957805697, -9.246173348327236, -16.692446753583088, -13.202507971733295, -6.121813676436104, 9.790640478533982, 2.329857691941657, 2.8844608779472205, 11.083717315974685, -9.565142693739729, 10.382072463615252, 11.687801032999399, -9.23410564521737, -0.37910132014420583, 12.267456443786122, 11.253626716045941, -4.970860071279492]
-
+model = [-22.400546976561237, -10.451067964042313, -18.6086749056464, -14.1214695347607, -6.36399199170839, 11.428122477078729, 3.0248446407761627, 3.4316227441828544, 12.576993255048198, -10.316226530691987, 10.761316221645709, 12.501387621641353, -9.776272973274683, 0.3172110649805399, 13.275939870295009, 12.24751308359399, -4.983004296479011]
 
 # Use `generate_data` to generate 100 blurred "hills" examples with balanced "non hills" examples and use 
 # this as your test data. Set labeled=True and generate results to use in `calculate_confusion_matrix`. 
@@ -299,11 +335,7 @@ model = [-19.69792957805697, -9.246173348327236, -16.692446753583088, -13.202507
 test_data = generate_data(clean_data, 100, "hills")
 
 
-results = apply_model(model, test_data, True)
+results = apply_model(model, test_data,True)
 pp.pprint(results)
 
-'''
-# Using the results above, show your confusion matrix for your model.
-def calculate_confusion_matrix( results):
-    pass
-'''
+calculate_confusion_matrix( results)
