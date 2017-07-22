@@ -186,12 +186,37 @@ def dot_product(thetas, xs):
 
 def calculate_yhat(thetas, xs):
     z = dot_product(thetas, xs)
-    return 1 / (1 + math.e ** (-z))
+    yhat = 1 / (1 + math.e ** (-z))
+    
+    if yhat < 0 or yhat > 1:
+        print '\n\n\nyhat not in range 0, 1\n\n\n'
+        
+    return yhat
     
     
     
 def calculate_error(thetas, train_data):
-    pass
+    error_summation = 0
+    for xs in train_data:
+        y = row[-1]
+        yhat = calculate_yhat(thetas, xs)
+        
+        if yhat == 0 and (1 - yhat) == 0:
+            pass
+        
+        elif yhat == 0:
+            error_summation += ((1 - y) * math.log(1 - yhat)) 
+    
+        elif (1 - yhat) == 0:
+            error_summation += (y * math.log(yhat))
+            
+        else:
+            error_summation += ((1 - y) * math.log(1 - yhat) + (1 - y) * math.log(1 - yhat)) 
+    
+    n = len(train_data)                     #TODO is this right?        
+    error = - (1 / n) * error_summation
+    
+    return error
     
 
 def derivative(j, thetas, train_data):
@@ -202,7 +227,7 @@ def derivative(j, thetas, train_data):
 # Use `learn_model` to learn a logistic regression model for classifying sensor images as "hills" or "not hills". 
 # Use your `generate_data` function to generate a training set with 100 hills examples. **Set Verbose to True**
 # learn_model returns the List of Thetas.
-'''def learn_model(train_data, verbose=False):
+def learn_model(train_data, verbose=False):
     #initialize thetas to random values between [-1, 1]
     thetas = [random.uniform(-1,1) for i in range(len(train_data[0]))]
     previous_error = 0.0
@@ -234,4 +259,4 @@ print results
 # Using the results above, show your confusion matrix for your model.
 def calculate_confusion_matrix( results):
     pass
-'''
+
