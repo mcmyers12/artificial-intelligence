@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import random
 import math
 import sys
+import pprint
+
+pp = pprint.PrettyPrinter(indent=4)
 
 plain = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]
 forest = [0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0]
@@ -98,22 +101,6 @@ def blur(data):
 # view_sensor_image( blur( clean_data["swamp"][0]))
 
 
-'''
-With the clean examples and the blur function, we have an unlimited amount of data for training 
-and testing our classifier, a logistic regression that determines if a sensor image is hills (1) or not (0).
-In classification, there is a general problem called the "unbalanced class problem". In general, we want 
-our training data to have the same number of classes, in this case "hills" and "not hills". This means you 
-should probably generate training data with, say, 100 hills and then 100 of all the other types of terrain 
-combined. When you send your data to the actual learn_model function, it will need to have all the 
-String labels transformed to 0 or 1 appropriately. Remember, you also need to set  x0x0  = 1.0; where you 
-do that is up to you but you need to be consistent (if you do it in generate_data then don't also do it in 
-learn_model or apply_model.
-You can make generate_data as sophisticated as you like. But it should at least take n and a label so that:
-generate_data( clean_data, 100, "hills")
-generates 100 hills, 100 not hills and has transformed the String labels into 1 and 0, respectively.
-'''
-
-
 def generate_hills(data, n, label, data_out):
     hill_index = 0
     for i in range(n):
@@ -163,7 +150,6 @@ def generate_data(data, n, label):
 '''
 Use generate_data to generate 10 blurred "hills" examples with balanced (same number of) "non hills" 
 examples to see that the function is working.
-
 results = generate_data(clean_data, 10, "hills")
 for result in results:
     for point in result:
@@ -173,6 +159,7 @@ for result in results:
             sys.stdout.write(point + ' ')
     print
 '''
+
 
 
 def dot_product(thetas, xs):
@@ -265,12 +252,13 @@ def learn_model(train_data, verbose=False):
             print 'error: ', current_error
             
 
-        if current_error < previous_error:
-            print 'LESS'
+        if current_error > previous_error:
+            alpha = alpha / 10.0
+            print 'GREATER'
             print
             print
         else:
-            print 'GREATER'
+            print 'LESS'
             print
             print
         previous_error = current_error
@@ -278,20 +266,43 @@ def learn_model(train_data, verbose=False):
         current_error = calculate_error(thetas, train_data)
 
 
+def apply_model(model, test_data, labeled=False):
+    results = []
+    for xs in test_data:
+        yhat = calculate_yhat(model, xs)
+        predicted = None
+        if yhat < .5:
+            predicted = 0
+        else:
+            predicted = 1
+        
+        
+        if labeled:
+            actual = xs[-1]
+            results.append((actual, predicted))
+        else:
+           results.append((predicted, yhat))
+            
+    return results
+
+
+
+
 train_data = generate_data(clean_data, 100, "hills")
-model = learn_model(train_data, True)
+#model = learn_model(train_data, True)
+model = [-19.69792957805697, -9.246173348327236, -16.692446753583088, -13.202507971733295, -6.121813676436104, 9.790640478533982, 2.329857691941657, 2.8844608779472205, 11.083717315974685, -9.565142693739729, 10.382072463615252, 11.687801032999399, -9.23410564521737, -0.37910132014420583, 12.267456443786122, 11.253626716045941, -4.970860071279492]
 
-# Use `generate_data` to generate 100 blurred "hills" examples with balanced "non hills" examples and use this as your test data. Set labeled=True and generate results to use in `calculate_confusion_matrix`. Print out the first 10 results, one per line.
+
+# Use `generate_data` to generate 100 blurred "hills" examples with balanced "non hills" examples and use 
+# this as your test data. Set labeled=True and generate results to use in `calculate_confusion_matrix`. 
+# Print out the first 10 results, one per line.
+test_data = generate_data(clean_data, 100, "hills")
+
+
+results = apply_model(model, test_data, True)
+pp.pprint(results)
+
 '''
-test_data = generate_data( clean_data, 100, "hills")
-
-def apply_model( model, test_data, labeled=False):
-    pass
-
-results = apply_model( model, test_data)
-print results
-
-
 # Using the results above, show your confusion matrix for your model.
 def calculate_confusion_matrix( results):
     pass
