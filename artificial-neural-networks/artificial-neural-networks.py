@@ -122,7 +122,20 @@ def calculate_delta_o(y, yhat):
     
 
 def calculate_delta_h(yhat, thetas, delta_os):
+    delta_h = yhat * (1 - yhat)
     
+    if len(thetas) != len(delta_os):
+        print '\n\n\nthetas length not equal to delta_os length\n\n\n'
+    
+    summation = 1.0
+    for i in range(len(thetas)):
+        theta = thetas[i]
+        delta_o = delta_os[i]
+        summation += (theta * delta_o)
+        
+    delta_h = delta_h * summation
+    
+    return delta_h
     
 
 def add_bias(xs):
@@ -162,16 +175,33 @@ def calculate_delta_os(network, ys):
         delta_os.append(delta_o)
     
     return delta_os
-    
 
-def update_output_node_thetas(network, alpha):
+
+def calculate_delta_hs(network):
+    delta_hs = []
+    
+    for i in range(len(hidden_node_thetas)):
+        delta_os = network['delta_os']
+        thetas = []
+        for output_node_thetas in network['output_node_thetas']:
+            thetas.append(output_node_thetas[i])            #Get the  first theta of each output node for the first hidden node, 2nd of each output node for the second hidden node, etc.
+    
+        delta_h = calculate_delta_h(yhat, thetas, delta_os)
+        delta_hs.append(delta_h)
+        
+    return delta_hs
+    
+        
+        
+
+'''def update_output_node_thetas(network, alpha):
     for i in range(len(network['output_node_thetas'])):
         thetas = network['output_node_thetas'][i]
         delta_o = network['delta_os'][i]
         hidden_node_y = network['hidden_node_outputs'][i]
         
         for i in range(len(thetas)):
-            thetas[i] = thetas[i] + alpha * delta_o
+            thetas[i] = thetas[i] + alpha * delta_o'''
     
 
 # Use `learn_model` to learn a ANN model for classifying sensor images as hills, swamps, plains or forest. 
@@ -195,12 +225,12 @@ def learn_model(data, hidden_nodes, verbose=False):
             #calculate delta_o for every output node
             ys = input_nodes[-1]
             network['delta_os'] = calculate_delta_os(network, ys)
-            
-            network['output_node_thetas'] = update_output_node_thetas(network)
-            
+
+            #calculate delta_h for every hidden node            
             network['delta_hs' = calculate_delta_hs(network)
 
-
+            #update all of the thetas
+            #network['output_node_thetas'] = update_output_node_thetas(network)
 
 
 
