@@ -51,8 +51,8 @@ def blur( data):
 
 
 def generate_labeled_data(data, n, label, one_hot_index, data_out):
-    y = [0, 0, 0, 0]
-    y[one_hot_index] = 1
+    y = [0.0, 0.0, 0.0, 0.0]
+    y[one_hot_index] = 1.0
     loop = len(data[label]) - 1
 
     index = 0
@@ -80,23 +80,22 @@ def generate_data(data, n):
 
 def create_network(data, hidden_nodes, output_nodes):
     num_thetas = len(data[0])                                       #TODO is this right???
-    network = { 'hidden': [], 'output': [] }
+    network = { 'hidden_node_thetas': [], 'output_node_thetas': [] }
     
     for i in range(hidden_nodes):
         hidden_node_thetas = [random.uniform(0, 1) for x in range(num_thetas)]
-        network['hidden'].append(hidden_node_thetas)
+        network['hidden_node_thetas'].append(hidden_node_thetas)
         
     for i in range(output_nodes):
         output_node_thetas = [random.uniform(0, 1) for x in range(num_thetas)]
-        network['output'].append(output_node_thetas)
+        network['output_node_thetas'].append(output_node_thetas)
         
         
     return network
 
 
-
 def dot_product(thetas, xs):
-    z = 0
+    z = 0.0
     if len(thetas) != len(xs):
         print '\n\n\nthetas length different than xs\n\n\n'
 
@@ -108,7 +107,7 @@ def dot_product(thetas, xs):
 
 def calculate_yhat(thetas, xs):
     z = dot_product(thetas, xs)
-    yhat = 1 / (1 + math.e ** (-z))
+    yhat = 1.0 / (1.0 + math.e ** (-z))
 
     if yhat < 0 or yhat > 1:
         print '\n\n\nyhat not in range 0, 1\n\n\n'
@@ -117,22 +116,89 @@ def calculate_yhat(thetas, xs):
 
 
 def calculate_delta_o(y, yhat):
-    delta_o = yhat * (1 - yhat) * (y - yhat)
+    delta_o = yhat * (1.0 - yhat) * (y - yhat)
     
-    return delta_o    
+    return delta_o
+    
+
+def calculate_delta_h(yhat, thetas, delta_os):
+    
+    
+
+def add_bias(xs):
+    xs_with_bias = copy.deepcopy(xs)                #todo see if this is needed
+    xs_with_bias.insert(0, 1.0)  
+    
+    return xs_with_bias  
+
+
+def calculate_hidden_node_outputs(network, input_nodes):
+    hidden_node_outputs = []
+    input_nodes_with_bias = add_bias(input_nodes)
+    for hidden_node_thetas in network['hidden_node_thetas']:
+        hidden_node_output = calculate_yhat(hidden_node_thetas, input_nodes_with_bias)
+        hidden_node_outputs.append(hidden_node_output)
+        
+    return hidden_node_outputs
+
+
+def calculate_output_node_outputs(network):
+    output_node_outputs = []
+    hidden_node_outputs_with_bias = add_bias(network['hidden_node_outputs'])
+    for output_node_thetas in network['output_node_thetas']
+        output_node_output = calculate_yhat(output_node_thetas, hidden_node_outputs_with_bias)
+        output_node_outputs.append(output_node_output)
+        
+    return output_node_outputs
+
+
+def calculate_delta_os(network, ys):
+    delta_os = []
+    for i in range(len(ys)):
+        yhat = network['output_node_outputs'][i]
+        y = ys[i]
+        
+        delta_o = calculate_delta_o(y, yhat)
+        delta_os.append(delta_o)
+    
+    return delta_os
+    
+
+def update_output_node_thetas(network, alpha):
+    for i in range(len(network['output_node_thetas'])):
+        thetas = network['output_node_thetas'][i]
+        delta_o = network['delta_os'][i]
+        hidden_node_y = network['hidden_node_outputs'][i]
+        
+        for i in range(len(thetas)):
+            thetas[i] = thetas[i] + alpha * delta_o
+    
 
 # Use `learn_model` to learn a ANN model for classifying sensor images as hills, swamps, plains or forest. 
 # The hidden layer will be one vector of thetas for each hidden node
 # The output layer will be one vector of thetas for each output (4 outputs)
 def learn_model(data, hidden_nodes, verbose=False):
-    network = create_network(data, hidden_nodes, 4)
-    #initialize thetas
-    #previous_error = 0.0
-    #while abs(current_error - previous_error) > epsilon
+    network = create_network(data, hidden_nodes, 4)   
+    alpha = 0.1                             #TODO make alpha adaptive 
 
     pp.pprint(network)
+    
+    #previous_error = 0.0
+    while abs(current_error - previous_error) > epsilon:
+        for input_nodes in data:
+            #feed forward step
+            #calculate output of every node in the network (yhat function)
+            network['hidden_node_outputs'] = calculate_hidden_node_outputs(network, input_nodes)
+            network['output_node_outputs'] = calculate_output_node_outputs(network)
 
-
+            #back prop step
+            #calculate delta_o for every output node
+            ys = input_nodes[-1]
+            network['delta_os'] = calculate_delta_os(network, ys)
+            
+            network['output_node_thetas'] = update_output_node_thetas(network)
+            
+            network['delta_hs' = calculate_delta_hs(network)
 
 
 
@@ -150,7 +216,7 @@ for result in train_data:
         else:
             sys.stdout.write(str(x) + '\t')
     print
-print
+printgit
 model = learn_model( train_data, 2, True)
 
 '''
@@ -181,4 +247,13 @@ for n in [2, 4, 8]:
 
 
 # which number of hidden nodes is best? ____
+'''
+
+
+
+'''
+QUESTIONS
+
+Don't we have to update the thetas of the output nodes before we calculate deltah?
+
 '''
