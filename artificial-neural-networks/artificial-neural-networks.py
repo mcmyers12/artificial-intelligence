@@ -264,37 +264,38 @@ def update_hidden_node_thetas(network, alpha, input_nodes):
  #TODO is this right?
  
  #LEFT OFF FIGURING OUT HOW TO CALCULATE ERROR
-def calculate_error(network, ys):
-    '''error = 0
-    for i in range(len(ys)):
-        y = ys[i]  
-        yhat = network['output_node_outputs'][i]
-        
-        #error += abs(y - yhat)
-        error += calculate_delta_o(y, yhat)
-        
-    return error''' 
+def calculate_error(data, network, alpha):
+    error = 0
     
-    error_summation = 0
-    for i in range(len(ys)):
-        y = ys[i]
-        yhat = network['output_node_outputs'][i]
+    for input_nodes in data:
+        #feed forward step
+        #calculate output of every node in the network (yhat function)
+        network['hidden_node_outputs'] = calculate_hidden_node_outputs(network, input_nodes)
+        network['output_node_outputs'] = calculate_output_node_outputs(network)
 
-        if yhat == 0 and (1 - yhat) == 0:
-            pass
+        #back prop step
+        #calculate delta_o for every output node
+        ys = input_nodes[-1]
+        #network['delta_os'] = calculate_delta_os(network, ys)
+        
+        '''yhats = network['output_node_outputs']
+        for i in range(len(ys)):
+            y = ys[i]
+            yhat = yhats[i]
+            error += abs(y - yhat)'''
+        for delta_o in network['delta_os']:
+             error += abs(delta_o)
+        #error += sum(network['delta_os'])
 
-        elif yhat == 0:
-            error_summation += ((1 - y) * math.log(1 - yhat))
+        #calculate delta_h for every hidden node            
+        network['delta_hs'] = calculate_delta_hs(network)           #TODO check this
 
-        elif (1 - yhat) == 0:
-            error_summation += (y * math.log(yhat))
-
-        else:
-            error_summation += (y * math.log(yhat) + (1 - y) * math.log(1 - yhat))
-
-    n = len(ys)  # TODO is this right?
-    error = - (1.0 / n) * error_summation
+        #update all of the thetas
+        update_output_node_thetas(network, alpha)
+        update_hidden_node_thetas(network, alpha, input_nodes)
+            
     return error
+    
     
 
 # Use `learn_model` to learn a ANN model for classifying sensor images as hills, swamps, plains or forest. 
@@ -306,12 +307,12 @@ def learn_model(data, num_hidden_nodes, verbose=False):
     epsilon = 1 / 10000000.0
     alpha = 0.1                         #TODO make alpha adaptive 
     previous_error = 0.0
-    current_error = float('inf')
+    current_error = float('-inf')
     
-    #pp.pprint(network)
+    iter = 0
     
-    #previous_error = 0.0
-    while True: # abs(current_error - previous_error) > epsilon:
+    while iter < 100 or abs(current_error - previous_error) > epsilon:
+        iter += 1
         for input_nodes in data:
             
             #feed forward step
@@ -338,13 +339,15 @@ def learn_model(data, num_hidden_nodes, verbose=False):
             print
             print
             
+            '''print (network['hidden_node_thetas'], network['output_node_thetas'])'''
             
-        '''    
+            
+            
         if verbose:
             print 'error: ', current_error
             #print network['hidden_node_outputs']
             #print network['output_node_outputs']
-        
+    
         print 'alpha', alpha
         if current_error > previous_error:
             alpha = alpha / 10.0
@@ -355,20 +358,47 @@ def learn_model(data, num_hidden_nodes, verbose=False):
             print 'LESS'
             print
             print
+        
             
-        '''        
         previous_error = current_error
+    
+        current_error = calculate_error(data, network, alpha)
         
-        current_error = calculate_error(network, ys)
-        
-        pp.pprint(network)
-        print
-        print            
+        #pp.pprint(network)
+        #print
+        #print            
 
     return (network['hidden_node_thetas'], network['output_node_thetas'])
+
+
+
+def apply_model(model, test_data, labeled=False):
+    results = []
+    for xs in test_data:
+        yhat = calculate_yhat(model, xs)
+        predicted = None
+        if yhat < .5:
+            predicted = 0
+        else:
+            predicted = 1
+        
+        
+        if labeled:
+            actual = xs[-1]
+            results.append((actual, predicted))
+        else:
+           results.append((predicted, yhat))
+            
+    return results
     
+    
+        
 
-
+def apply_model(model, test_data, labeled=False):
+    hidden_node_thetas = model[0]
+    output_node_thetas = model[1]
+    
+    
 
 
 
@@ -383,14 +413,14 @@ train_data = generate_data( clean_data, 100)
 print'''
 model = learn_model( train_data, 2, True)
 print
+#model = ([[-2.6467762997120756, 0.8347474878890608, -0.4021678262981307, 0.22482914667410522, 1.541319299344863, 3.866660086952017, 3.7021769468789536, 3.1534515729083665, 3.0186601461524414, 0.1638742258980636, 1.0751388108958775, 1.3630214431100023, 0.5566911846896053, -1.5747099101087894, -1.0378154740878893, -0.014541224063414368, -1.2073802732691445], [-1.8522071950992502, -0.5204479046001715, 0.08756288397249475, 0.4255866973223979, -0.17082541399310935, 2.075367497090979, 0.893969891285025, 0.43726680078415653, 1.8116935304244797, 3.7609267808480205, 4.523692304266277, 4.340556093938011, 3.9573644726723214, -2.8921955730856514, -0.8936083596763201, -0.2573666159701516, -2.093593663572503]], [[-5.486866163763113, 1.8097457733789295, 4.42579843984075], [-2.981109769587522, -12.731110888835353, 9.04093006156329], [-10.801974233204731, 21.925813392372692, -9.129490552646581], [3.4971846304607683, -11.0940^C85035032895, -9.20300758636157]])
 pp.pprint(model)
 
 '''
 # Use `generate_data` to generate 100 blurred examples of each terrain and use this as your test data. Print out the first 10 results, one per line.
-test_data = generate_data( clean_data, 100)
+test_data = generate_data(clean_data, 100)
 
-def apply_model( model, test_data, labeled=False):
-    pass
+
 
 results = apply_model( model, test_data)
 print results
