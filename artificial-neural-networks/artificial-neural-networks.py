@@ -278,11 +278,6 @@ def calculate_error(data, network, alpha):
         ys = input_nodes[-1]
         #network['delta_os'] = calculate_delta_os(network, ys)
         
-        '''yhats = network['output_node_outputs']
-        for i in range(len(ys)):
-            y = ys[i]
-            yhat = yhats[i]
-            error += abs(y - yhat)'''
         for delta_o in network['delta_os']:
              error += abs(delta_o)
         #error += sum(network['delta_os'])
@@ -390,13 +385,69 @@ def apply_model(model, test_data, labeled=False):
            results.append((predicted, yhat))
             
     return results
-    
-    
+
+
+def get_max_prediction(network):    
+    predictions = network['output_node_outputs']
+    max_prediction_index = None
+    max_value = float('-inf')
+    for i in range(len(predictions)):
+        prediction = predictions[i]
+        if prediction > max_value:
+            max_value = prediction
+            max_prediction_index = i
+            
+    return max_prediction_index, max_value
         
 
 def apply_model(model, test_data, labeled=False):
-    hidden_node_thetas = model[0]
-    output_node_thetas = model[1]
+    network = {}
+    results = []
+    network['hidden_node_thetas'] = model[0]
+    network['output_node_thetas'] = model[1]
+    
+    for input_nodes in test_data:
+        network['hidden_node_outputs'] = calculate_hidden_node_outputs(network, input_nodes)
+        network['output_node_outputs'] = calculate_output_node_outputs(network)
+        result = []
+        
+        if labeled:
+            actuals = input_nodes[-1]
+            predictions = network['output_node_outputs']
+            print 'actuals', actuals
+            print 'predictions', predictions
+            max_prediction_index = predictions.index(max(predictions))
+            
+            for i in range(len(predictions)):
+                prediction = predictions[i]
+                actual = actuals[i]
+                if i != max_prediction_index:
+                    prediction = 0.0
+                    result.append((actual, prediction))
+                
+                else:
+                    prediction = 1.0
+                    result.append((actual, prediction))            
+        
+            results.append(result)
+            
+        else:
+            predictions = network['output_node_outputs']
+            max_prediction_index = predictions.index(max(predictions))
+            
+            for i in range(len(predictions)):
+                prediction = predictions[i]
+                if i != max_prediction_index:
+                    result.append((0, 1 - prediction))
+                
+                else:
+                    result.append((1, prediction))
+            
+            results.append(result)
+    
+    return results
+    
+    
     
     
 
@@ -416,16 +467,15 @@ print
 #model = ([[-2.6467762997120756, 0.8347474878890608, -0.4021678262981307, 0.22482914667410522, 1.541319299344863, 3.866660086952017, 3.7021769468789536, 3.1534515729083665, 3.0186601461524414, 0.1638742258980636, 1.0751388108958775, 1.3630214431100023, 0.5566911846896053, -1.5747099101087894, -1.0378154740878893, -0.014541224063414368, -1.2073802732691445], [-1.8522071950992502, -0.5204479046001715, 0.08756288397249475, 0.4255866973223979, -0.17082541399310935, 2.075367497090979, 0.893969891285025, 0.43726680078415653, 1.8116935304244797, 3.7609267808480205, 4.523692304266277, 4.340556093938011, 3.9573644726723214, -2.8921955730856514, -0.8936083596763201, -0.2573666159701516, -2.093593663572503]], [[-5.486866163763113, 1.8097457733789295, 4.42579843984075], [-2.981109769587522, -12.731110888835353, 9.04093006156329], [-10.801974233204731, 21.925813392372692, -9.129490552646581], [3.4971846304607683, -11.0940^C85035032895, -9.20300758636157]])
 pp.pprint(model)
 
-'''
+
 # Use `generate_data` to generate 100 blurred examples of each terrain and use this as your test data. Print out the first 10 results, one per line.
 test_data = generate_data(clean_data, 100)
 
 
+results = apply_model( model, test_data, True)
+pp.pprint(results)
 
-results = apply_model( model, test_data)
-print results
-
-
+'''
 # Now that you're pretty sure your algorithm works (the error rate during training is going down, and you can evaluate `apply_model` results for its error rate, learn validation curves:
 def calculate_confusion_matrix( results):
     pass
