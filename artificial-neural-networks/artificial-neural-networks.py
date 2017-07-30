@@ -398,6 +398,38 @@ def get_max_prediction(network):
             max_prediction_index = i
             
     return max_prediction_index, max_value
+
+
+def get_labeled_data_results(actuals, predictions):
+    result = []
+    max_prediction_index = predictions.index(max(predictions))
+            
+    for i in range(len(predictions)):
+        actual = actuals[i]
+        if i != max_prediction_index:
+            prediction = 0.0
+            result.append((actual, prediction))
+        
+        else:
+            prediction = 1.0
+            result.append((actual, prediction))            
+
+    return result
+
+
+def get_unlabeled_data_results(predictions):
+    result = []
+    max_prediction_index = predictions.index(max(predictions))
+            
+    for i in range(len(predictions)):
+        prediction = predictions[i]
+        if i != max_prediction_index:
+            result.append((0, 1 - prediction))
+        
+        else:
+            result.append((1, prediction))
+            
+    return result
         
 
 def apply_model(model, test_data, labeled=False):
@@ -409,40 +441,16 @@ def apply_model(model, test_data, labeled=False):
     for input_nodes in test_data:
         network['hidden_node_outputs'] = calculate_hidden_node_outputs(network, input_nodes)
         network['output_node_outputs'] = calculate_output_node_outputs(network)
-        result = []
         
         if labeled:
             actuals = input_nodes[-1]
             predictions = network['output_node_outputs']
-            print 'actuals', actuals
-            print 'predictions', predictions
-            max_prediction_index = predictions.index(max(predictions))
-            
-            for i in range(len(predictions)):
-                prediction = predictions[i]
-                actual = actuals[i]
-                if i != max_prediction_index:
-                    prediction = 0.0
-                    result.append((actual, prediction))
-                
-                else:
-                    prediction = 1.0
-                    result.append((actual, prediction))            
-        
+            result = get_labeled_data_results(actuals, predictions)      
             results.append(result)
             
         else:
             predictions = network['output_node_outputs']
-            max_prediction_index = predictions.index(max(predictions))
-            
-            for i in range(len(predictions)):
-                prediction = predictions[i]
-                if i != max_prediction_index:
-                    result.append((0, 1 - prediction))
-                
-                else:
-                    result.append((1, prediction))
-            
+            result = get_unlabeled_data_results(predictions)
             results.append(result)
     
     return results
