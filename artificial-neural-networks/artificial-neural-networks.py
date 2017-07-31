@@ -2,11 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import sys
-import pprint
 import copy
 import math
 
-pp = pprint.PrettyPrinter(indent=4)
 
 clean_data = {
     "plains": [
@@ -98,10 +96,6 @@ def initialize_network(data, num_hidden_nodes, num_output_nodes):
 
 def dot_product(thetas, xs):
     z = 0.0
-    if len(thetas) != len(xs):
-        print '\n\n\nthetas length different than xs\n\n\n'
-        print len(thetas)
-        print len(xs)
 
     for i in range(len(thetas)):
         z += thetas[i] * xs[i]
@@ -112,9 +106,6 @@ def dot_product(thetas, xs):
 def calculate_yhat(thetas, xs):
     z = dot_product(thetas, xs)
     yhat = 1.0 / (1.0 + math.e ** (-z))
-
-    if yhat < 0 or yhat > 1:
-        print '\n\n\nyhat not in range 0, 1\n\n\n'
 
     return yhat
 
@@ -130,20 +121,10 @@ def calculate_hidden_node_outputs(network, input_nodes):
     hidden_node_outputs = []
     input_nodes_with_bias = add_bias(input_nodes[:len(input_nodes) - 1])  # use only input node xs, without the y
 
-    # print 'input_nodes', input_nodes
-    # print 'input_nodes_with_bias', input_nodes_with_bias
-
     for hidden_node_thetas in network['hidden_node_thetas']:
-        # print '\thidden_node_thetas'
-        # pp.pprint(hidden_node_thetas)
-
         hidden_node_output = calculate_yhat(hidden_node_thetas, input_nodes_with_bias)
         hidden_node_outputs.append(hidden_node_output)
 
-    '''print 'hidden_node_outputs', hidden_node_outputs
-    print 
-    print
-    print'''
     return hidden_node_outputs
 
 
@@ -151,18 +132,9 @@ def calculate_output_node_outputs(network):
     output_node_outputs = []
     hidden_node_outputs_with_bias = add_bias(network['hidden_node_outputs'])
 
-    '''print 'hidden_node_outputs_with_bias', hidden_node_outputs_with_bias
-    print'''
-
     for output_node_thetas in network['output_node_thetas']:
-        # print 'output_node_thetas', output_node_thetas
         output_node_output = calculate_yhat(output_node_thetas, hidden_node_outputs_with_bias)
         output_node_outputs.append(output_node_output)
-
-    '''print 'output_node_outputs', output_node_outputs
-    print 
-    print
-    print'''
 
     return output_node_outputs
 
@@ -175,8 +147,7 @@ def calculate_delta_o(y, yhat):
 
 def calculate_delta_os(network, ys):
     delta_os = []
-    '''print 'ys', ys
-    print 'output_node_outputs', network['output_node_outputs']'''
+
     for i in range(len(ys)):
         yhat = network['output_node_outputs'][i]
         y = ys[i]
@@ -184,17 +155,11 @@ def calculate_delta_os(network, ys):
         delta_o = calculate_delta_o(y, yhat)
         delta_os.append(delta_o)
 
-    '''print 'delta_os', delta_os
-    print
-    print'''
     return delta_os
 
 
 def calculate_delta_h(yhat, thetas, delta_os):
     delta_h = yhat * (1 - yhat)
-
-    if len(thetas) != len(delta_os):
-        print '\n\n\nthetas length not equal to delta_os length\n\n\n'
 
     summation = 0.0
     for i in range(len(thetas)):
@@ -219,8 +184,7 @@ def calculate_delta_hs(network):
             #   2nd of each output node for the second hidden node, etc.
             # i + 1 because we skip the theta for the bbias
 
-        yhat = network['hidden_node_outputs'][
-            i]  # TODO double check this is the right yhat but i'm pretty sure it is....
+        yhat = network['hidden_node_outputs'][i]  # TODO double check this is the right yhat but i'm pretty sure it is....
         delta_h = calculate_delta_h(yhat, thetas, delta_os)
         delta_hs.append(delta_h)
 
@@ -241,33 +205,38 @@ def update_output_node_thetas(network, alpha):
 def update_hidden_node_thetas(network, alpha, input_nodes):
     input_nodes_with_bias = add_bias(input_nodes[:len(input_nodes) - 1])  # use only input node xs, without the y
 
-    '''print 'input_nodes_with_bias'
-    pp.pprint(input_nodes_with_bias)'''
-
     for i in range(len(network['hidden_node_thetas'])):
         thetas = network['hidden_node_thetas'][i]
         delta_h = network['delta_hs'][i]
-
-        '''print 'thetas'
-        pp.pprint(thetas)
-        print 'delta_h', delta_h'''
 
         for j in range(len(thetas)):
             xi = input_nodes_with_bias[j]
             thetas[j] = thetas[j] + alpha * delta_h * xi
 
-        '''print 'new_thetas' 
-        pp.pprint(thetas)
-        print
-        print'''
 
+def calculate_individual_error(ys, yhats):
+    error_summation = 0
+    for i in range(len(ys)):
+        y = ys[i]
+        yhat = yhats[i]
 
-        # TODO is this right?
+        if yhat == 0 and (1 - yhat) == 0:
+            pass
 
+        elif yhat == 0:
+            error_summation += ((1 - y) * math.log(1 - yhat))
 
+        elif (1 - yhat) == 0:
+            error_summation += (y * math.log(yhat))
+
+        else:
+            error_summation += (y * math.log(yhat) + (1 - y) * math.log(1 - yhat))
+
+    return error_summation
+ 
+   
 def calculate_error(data, network, alpha):
     error = 0
-    
     test_network = {}
     test_network['hidden_node_thetas'] = copy.deepcopy(network['hidden_node_thetas'])
     test_network['output_node_thetas'] = copy.deepcopy(network['output_node_thetas'])
@@ -277,17 +246,18 @@ def calculate_error(data, network, alpha):
         test_network['output_node_outputs'] = calculate_output_node_outputs(network)
 
         ys = input_nodes[-1]
-
+        yhats = test_network['output_node_outputs']
+        
+        error += calculate_individual_error(ys, yhats)
+            
         test_network['delta_os'] = calculate_delta_os(network, ys)
-        for delta_o in test_network['delta_os']:
-            error += abs(delta_o)
-
         test_network['delta_hs'] = calculate_delta_hs(test_network)  # TODO check this
 
         update_output_node_thetas(test_network, alpha)
         update_hidden_node_thetas(test_network, alpha, input_nodes)
 
-    return error
+    return -1/(error / len(data))
+    
 
 
 # Use `learn_model` to learn a ANN model for classifying sensor images as hills, swamps, plains or forest.
@@ -296,14 +266,15 @@ def calculate_error(data, network, alpha):
 def learn_model(data, num_hidden_nodes, verbose=False):
     num_output_nodes = 4
     network = initialize_network(data, num_hidden_nodes, num_output_nodes)
-    epsilon = 1 / 100000000.0
-    alpha = 0.1  # TODO make alpha adaptive
+    epsilon = 0.0000001
+    alpha = 0.01 
+    
     previous_error = 0.0
     current_error = float('-inf')
 
     iter = 0
 
-    while iter < 500: # or abs(current_error - previous_error) > epsilon:
+    while iter < 5000 and abs(current_error - previous_error) > epsilon:
         iter += 1
         for input_nodes in data:
             # feed forward step
@@ -323,38 +294,12 @@ def learn_model(data, num_hidden_nodes, verbose=False):
             update_output_node_thetas(network, alpha)
             update_hidden_node_thetas(network, alpha, input_nodes)
 
-            print 'ys'
-            pp.pprint(ys)
-            print 'y_hats'
-            pp.pprint(network['output_node_outputs'])
-            print
-            print
-
-            '''print (network['hidden_node_thetas'], network['output_node_thetas'])'''
-
-        if verbose:
+        if verbose and iter % 1000 == 0:
             print 'error: ', current_error
-            # print network['hidden_node_outputs']
-            # print network['output_node_outputs']
 
-        print 'alpha', alpha
-        if current_error > previous_error:
-            alpha = alpha / 10.0
-            print 'GREATER'
-            print
-            print
-        else:
-            print 'LESS'
-            print
-            print
+        previous_error = current_error
 
-        #previous_error = current_error
-
-        #current_error = calculate_error(data, network, alpha)
-
-        # pp.pprint(network)
-        # print
-        # print
+        current_error = calculate_error(data, network, alpha)
 
     return (network['hidden_node_thetas'], network['output_node_thetas'])
 
@@ -469,9 +414,6 @@ def generate_validation_curves(clean_data):
         train_results = apply_model(model, train, True)
         test_results = apply_model(model, test, True)
 
-        pp.pprint(train_results)
-        pp.pprint(test_results)
-
         train_error_values.append(calculate_validation_curve_error(train_results))
         test_error_values.append(calculate_validation_curve_error(test_results))
 
@@ -483,18 +425,6 @@ def generate_validation_curves(clean_data):
     plt.plot(hidden_nodes, test_error_values)
     plt.show()
 
-
-'''train_data = generate_data(clean_data, 100)
-model = learn_model(train_data, 2, True)
-print
-# model = ([[-2.6467762997120756, 0.8347474878890608, -0.4021678262981307, 0.22482914667410522, 1.541319299344863, 3.866660086952017, 3.7021769468789536, 3.1534515729083665, 3.0186601461524414, 0.1638742258980636, 1.0751388108958775, 1.3630214431100023, 0.5566911846896053, -1.5747099101087894, -1.0378154740878893, -0.014541224063414368, -1.2073802732691445], [-1.8522071950992502, -0.5204479046001715, 0.08756288397249475, 0.4255866973223979, -0.17082541399310935, 2.075367497090979, 0.893969891285025, 0.43726680078415653, 1.8116935304244797, 3.7609267808480205, 4.523692304266277, 4.340556093938011, 3.9573644726723214, -2.8921955730856514, -0.8936083596763201, -0.2573666159701516, -2.093593663572503]], [[-5.486866163763113, 1.8097457733789295, 4.42579843984075], [-2.981109769587522, -12.731110888835353, 9.04093006156329], [-10.801974233204731, 21.925813392372692, -9.129490552646581], [3.4971846304607683, -11.0940^C85035032895, -9.20300758636157]])
-pp.pprint(model)
-
-# Use `generate_data` to generate 100 blurred examples of each terrain and use this as your test data. Print out the first 10 results, one per line.
-test_data = generate_data(clean_data, 100)
-
-results = apply_model(model, test_data, True)
-pp.pprint(results)'''
 generate_validation_curves(clean_data)
 
 
