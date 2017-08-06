@@ -17,6 +17,15 @@ def read_csv(file_name):
     return table
 
 
+def create_train_test_sets(data):
+    random.shuffle(data)
+    split_point = len(data) / 2
+    test_set = data[:split_point]
+    train_set = data[split_point:]
+    
+    return train_set, test_set
+    
+
 def get_attribute_domains(data):
     attributes = {}
     
@@ -142,10 +151,50 @@ def pick_best_attribute(data, attributes):
             best_attribute = attribute
             
     return best_attribute
-        
 
 
-def id3(data, tree, attributes, default, parent_node):
+def create_decision_tree(data, attributes, target_attr, fitness_func):
+    """
+    Returns a new decision tree based on the examples given.
+    """
+    data    = data[:]
+    vals    = [record[target_attr] for record in data]
+    default = majority_value(data, target_attr)
+
+    # If the dataset is empty or the attributes list is empty, return the
+    # default value. When checking the attributes list for emptiness, we
+    # need to subtract 1 to account for the target attribute.
+    if not data or (len(attributes) - 1) <= 0:
+        return default
+    # If all the records in the dataset have the same classification,
+    # return that classification.
+    elif vals.count(vals[0]) == len(vals):
+        return vals[0]
+    else:
+        # Choose the next best attribute to best classify our data
+        best = choose_attribute(data, attributes, target_attr, fitness_func)
+
+        # Create a new decision tree/node with the best attribute and an empty
+        # dictionary object--we'll fill that up next.
+        tree = {best:{}}
+
+        # Create a new decision tree/sub-node for each of the values in the
+        # best attribute field
+        for val in get_values(data, best):
+            # Create a subtree for the current value under the "best" field
+            subset = get_examples(data, best, val)
+            new_attributes = [attr for attr in attributes if attr != best]
+            subtree = create_decision_tree(subset, new_attributes, target_attr, fitness_func)
+
+
+            # Add the new subtree to the empty dictionary object in our new
+            # tree/node we just created.
+            tree[best][val] = subtree
+
+    return tree       
+
+
+def id3(data, attributes, default):
     if not data:
         return default
         
@@ -161,45 +210,89 @@ def id3(data, tree, attributes, default, parent_node):
     best_attribute = pick_best_attribute(data, attributes)
     domain = attributes[best_attribute]
     
-    node = Node(best_attribute)
-    tree.add_node(node, parent_node)
+    tree = { best_attribute: {} }
         
-    for value in domain:
-        node.add_edge(value)
-        
+    for value in domain:        
         subset = get_data_subset(best_attribute, value, data)
         
         new_attributes = copy.deepcopy(attributes)
         new_attributes.pop(best_attribute, None)
     
-        child = id3(subset, tree, new_attributes, default_label, node)
-        
-        node.add_child(child)
-        if type(child) != str:
-            tree.add_node(child, node)
+        subtree = id3(subset, new_attributes, default_label)
+        tree[best_attribute][value] = subtree
     
-    return node
+    return tree
     
     
 def train(training_data):
     default_label = get_majority_label(training_data)
     attributes = get_attribute_domains(training_data)
-    decision_tree = Tree()
      
-    id3(training_data, decision_tree, attributes, default_label, None)
+    decision_tree = id3(training_data, attributes, default_label)
 
     return decision_tree
     
 
+def view(tree):
+     pp.pprint(tree)   
+
+
+
+def classify_instance(tree, instance):
+    print instance
+    root = next(iter(tree))
+    instance_value = instance[root]
+    #branch = tree[root]
     
+    '''print 'root', root
+    print 'instance_value', instance_value
+    print 'tree'
+    pp.pprint(tree) '''
+    
+    while type(tree) == dict:
+        tree = tree[root][instance_value]
+        
+        if type(tree) == dict:
+            root = next(iter(tree))
+            instance_value = instance[root]
+            
+        '''print 'root', root
+        print 'instance_value', instance_value
+        print 'tree'
+        pp.pprint(tree) '''
+    
+    return tree
+
+def classify(tree, test_data):
+    classifications = []
+    for row in test_data:
+        classification = classify_instance(tree, row)
+        classifications.append(classification)
+        print 'classification', classification
+        print
+    
+    return classifications    
+    
+
+def evaluate(test_data, classifications):
+    #print 'classifications', classifications
+    errors = 0.0
+    for i in range(len(test_data)):
+        #print 'classifications[i]',classifications[i], test_data[i][0]
+        if classifications[i] != test_data[i][0]:
+            errors += 1
+            #print errors
+            
+    error_rate = errors / len(test_data)
+    return error_rate
+
+
 data = read_csv('agaricus-lepiota.data')
 tree = train(data)
-nodes = tree.nodes
-for node_id in nodes:
-    print nodes[node_id]
-    for child in nodes[node_id].children:
-        print '\t', child
-    
+classifications = classify(tree, data)      #TODO split test/train data
+error_rate = evaluate(data, classifications)
+print error_rate
+
     
     
     
