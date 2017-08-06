@@ -1,14 +1,34 @@
-from tree import Tree
-from node import Node
 import csv
-import pprint
 import copy
 import random
 import math
 
-pp = pprint.PrettyPrinter(indent=4)
 
+attribute_names = {
+    1: 'cap-shape',                
+    2: 'cap-surface',              
+    3: 'cap-color',                
+    4: 'bruises?',                
+    5: 'odor',                 
+    6: 'gill-attachment',          
+    7: 'gill-spacing',         
+    8: 'gill-size',            
+    9: 'gill-color',               
+    10: 'stalk-shape',              
+    11: 'stalk-root',             
+    12: 'stalk-surface-above-ring', 
+    13: 'stalk-surface-below-ring',
+    14: 'stalk-color-above-ring',   
+    15: 'stalk-color-below-ring',  
+    16: 'veil-type',                
+    17: 'veil-color',               
+    18: 'ring-number',              
+    19: 'ring-type',             
+    20: 'spore-print-color',        
+    21: 'population',         
+    22: 'habitat'
 
+}
 def read_csv(file_name):
     with open(file_name, 'rb') as f:
         reader = csv.reader(f)
@@ -190,11 +210,26 @@ def train(training_data):
     decision_tree = id3(training_data, attributes, default_label)
 
     return decision_tree
-    
+
+def __str__(self, level=0):
+    	display = "|" + "--" * level + "|" + str(self.nodeType) + " " + str(self.nodeValue) + "\n"
+    	for subtree in self.subtrees:
+    		display += subtree.__str__(level + 1)
+    	return display
+
+def pretty_print_tree(tree, indent=0):
+    for key, value in tree.iteritems():
+        if type(key) == int:
+            key = attribute_names[key]
+        print '    ' * indent + str(key)
+        if isinstance(value, dict):
+            pretty_print_tree(value, indent+1)
+        else:
+            print '    ' * (indent+1) + str(value)    
+
 
 def view(tree):
-     pp.pprint(tree)   
-
+    pretty_print_tree(tree)
 
 
 def classify_instance(tree, instance):
@@ -238,6 +273,10 @@ view(tree)
 classifications = classify(tree, set2)
 error_rate = evaluate(set2, classifications)
 print error_rate
+print
+print
+print
+
 
 tree = train(set2)
 view(tree)
