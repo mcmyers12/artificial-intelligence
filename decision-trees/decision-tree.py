@@ -1,4 +1,5 @@
 from tree import Tree
+from node import Node
 import csv
 import pprint
 import copy
@@ -64,7 +65,7 @@ def homogeneous(data):
     return True
     
 
-def get_data_subsest(best_attribute, value, data):
+def get_data_subset(best_attribute, value, data):
     data_subset = []
     for row in data:
         if row[best_attribute] == value:
@@ -144,7 +145,7 @@ def pick_best_attribute(data, attributes):
         
 
 
-def id3(data, tree, attributes, default):
+def id3(data, tree, attributes, default, parent_node):
     if not data:
         return default
         
@@ -156,42 +157,48 @@ def id3(data, tree, attributes, default):
         label = get_majority_label(data)
         return label
     
-    best_attribute = pick_best_attribute(data, attributes)
-    
-    tree.add_node(best_attribute)
-    
     default_label = get_majority_label(data)
-    
+    best_attribute = pick_best_attribute(data, attributes)
     domain = attributes[best_attribute]
     
-    for value in domain:
-        tree.nodes[best_attribute].add_edge(value)
+    node = Node(best_attribute)
+    tree.add_node(node, parent_node)
         
-        subset = get_data_subsest(best_attribute, value, data)
+    for value in domain:
+        node.add_edge(value)
+        
+        subset = get_data_subset(best_attribute, value, data)
         
         new_attributes = copy.deepcopy(attributes)
         new_attributes.pop(best_attribute, None)
     
-        child = id3(subset, tree, new_attributes, default_label)
+        child = id3(subset, tree, new_attributes, default_label, node)
         
-        tree.add_node(child, best_attribute)
+        node.add_child(child)
+        if type(child) != str:
+            tree.add_node(child, node)
     
-    return tree
+    return node
     
     
 def train(training_data):
     default_label = get_majority_label(training_data)
     attributes = get_attribute_domains(training_data)
-    tree = Tree()
+    decision_tree = Tree()
      
-    decision_tree = id3(training_data, tree, attributes, default_label)
+    id3(training_data, decision_tree, attributes, default_label, None)
 
     return decision_tree
     
 
     
 data = read_csv('agaricus-lepiota.data')
-pp.pprint(train(data).nodes)   
+tree = train(data)
+nodes = tree.nodes
+for node_id in nodes:
+    print nodes[node_id]
+    for child in nodes[node_id].children:
+        print '\t', child
     
     
     

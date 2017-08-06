@@ -7,17 +7,18 @@ class Tree:
         self.nodes = {}
 
 
-    def add_node(self, identifier, parent=None):
-        node = Node(identifier)
-        self.nodes[identifier] = node
+    def add_node(self, node, parent=None):        
+        node_identifier = node.id
+        
+        self.nodes[node_identifier] = node
 
         if parent is not None:
-            self.nodes[parent].add_child(identifier)
+            parent_identifier = parent.id
+            self.nodes[parent_identifier].add_child(node)
 
-        return node
 
 
-    def traverse(self, identifier, mode=_DEPTH):
+    '''def traverse(self, identifier, mode=_DEPTH):
         # Python generator. Loosly based on an algorithm from 
         # 'Essential LISP' by John R. Anderson, Albert T. Corbett, 
         # and Brian J. Reiser, page 239-241
@@ -29,7 +30,7 @@ class Tree:
             if mode == _DEPTH:
                 queue = expansion + queue[1:]  # depth-first
             elif mode == _BREADTH:
-                queue = queue[1:] + expansion  # width-first
+                queue = queue[1:] + expansion  # width-first'''
 
 
         
