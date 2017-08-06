@@ -104,3 +104,4 @@ ENV/
 
 *pycharm/.idea/workspace.xml
 
+*.pyc
