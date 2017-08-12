@@ -21,35 +21,56 @@ def create_train_test_sets(data):
     return train_set, test_set
     
 
-def initialize_probability_counts(data):
+def get_probability_counts(data):
     probability_counts = {}
     
     for i in range(len(data[0]) - 1):
-        i = i + 1           #Skip the first column
+        i = i + 1
         probability_counts[i] = {}
     
     for row in data:
         for i in range(len(row) - 1):
-            i = i + 1           #Skip the first column
+            i = i + 1
             attribute_value = row[i]
             if attribute_value not in probability_counts[i]:
-                probability_counts[i][attribute_value] = {'p': 1, 'e': 1}
+                probability_counts[i][attribute_value] = {'p': 1.0, 'e': 1.0} #+1 smoothing
             else:
                 if row[0] == 'p':
-                    probability_counts[i][attribute_value]['p'] += 1
+                    probability_counts[i][attribute_value]['p'] += 1.0
                 elif row[0] == 'e':
-                    probability_counts[i][attribute_value]['e'] += 1
+                    probability_counts[i][attribute_value]['e'] += 1.0
     
     pp.pprint(probability_counts)            
     return probability_counts
 
 
-def calculate_class_probabilities(data):
-    pass
+def get_class_label_counts(data):
+    class_label_counts = {'p': 1.0, 'e': 1.0} #+1 smoothing
+    for row in data:
+        if row[0] == 'p':
+            class_label_counts['p'] += 1.0
+        elif row[0] == 'e':
+            class_label_counts['e'] += 1.0
+    
+    pp.pprint(class_label_counts)
+    return class_label_counts
+        
 
 
 def learn(data):
-    pass
+    probabilities = get_probability_counts(data)
+    class_label_counts = get_class_label_counts(data)
+    p_count = class_label_counts['p']
+    e_count = class_label_counts['e']
+    
+    for attribute_index in probabilities:
+        for attribute_value in probabilities[attribute_index]:
+            probabilities[attribute_index][attribute_value]['p'] = probabilities[attribute_index][attribute_value]['p'] / p_count
+            probabilities[attribute_index][attribute_value]['e'] = probabilities[attribute_index][attribute_value]['e'] / e_count
+    
+    pp.pprint(probabilities)
+    return probabilities
+    
     
 
 #Returns a list of tuples: each is a class and the normalized probability of that class
@@ -65,7 +86,7 @@ def evaluate():
 
 
 data = read_csv('agaricus-lepiota.data')
-initialize_probability_counts(data)
+learn(data)
 
 
 
