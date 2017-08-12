@@ -29,6 +29,8 @@ attribute_names = {
     22: 'habitat'
 
 }
+
+
 def read_csv(file_name):
     with open(file_name, 'rb') as f:
         reader = csv.reader(f)
@@ -211,11 +213,6 @@ def train(training_data):
 
     return decision_tree
 
-def __str__(self, level=0):
-    	display = "|" + "--" * level + "|" + str(self.nodeType) + " " + str(self.nodeValue) + "\n"
-    	for subtree in self.subtrees:
-    		display += subtree.__str__(level + 1)
-    	return display
 
 def pretty_print_tree(tree, indent=0):
     for key, value in tree.iteritems():
