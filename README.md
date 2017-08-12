@@ -8,6 +8,7 @@ Artificial Intelligence EN.605.445
 * Forward Planner (incomplete)
 * Local Search Genetic Algorithm
 * Logistic Regression
+* Naive Bayes Classifier
 * Q Learning (incomplete)
 * Successive Elimination of Dominated Strategies
 * Unification
