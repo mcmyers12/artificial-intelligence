@@ -45,23 +45,24 @@ def get_probability_counts(data):
 
 
 def get_class_label_counts(data):
-    class_label_counts = {'p': 1.0, 'e': 1.0} #+1 smoothing
+    p_count = 1.0
+    e_count = 1.0
     for row in data:
         if row[0] == 'p':
-            class_label_counts['p'] += 1.0
+            p_count += 1.0
         elif row[0] == 'e':
-            class_label_counts['e'] += 1.0
+            e_count += 1.0
     
-    pp.pprint(class_label_counts)
-    return class_label_counts
+    print
+    print 'p_count', p_count, 'e_count', e_count
+    return p_count, e_count
+
         
 
 
 def learn(data):
     probabilities = get_probability_counts(data)
-    class_label_counts = get_class_label_counts(data)
-    p_count = class_label_counts['p']
-    e_count = class_label_counts['e']
+    p_count, e_count = get_class_label_counts(data)
     
     for attribute_index in probabilities:
         for attribute_value in probabilities[attribute_index]:
@@ -70,14 +71,80 @@ def learn(data):
     
     pp.pprint(probabilities)
     return probabilities
+
+
+def calculate_probability(probabilities, instance, label, class_probabilities):
+    probability = 1
     
+    for attribute_index in range(len(instance) - 1):
+        attribute_index += 1                                #skip class label
+        attribute_value = instance[attribute_index]
+        probability *= probabilities[attribute_index][attribute_value][label]
+        
+    probability *= class_probabilities[label]
     
+    print 'probability: '
+    print '\tinstance: ', instance
+    print '\tlabel: ', label    
+    print '\tprobability: ', probability
+
+    return probability
+
+
+def normalize(results):
+    denominator = results['p'] + results['e']
+    
+    print 'results before normalization: ', results
+
+    results['p'] = results['p'] / denominator
+    results['e'] = results['e'] / denominator
+
+    print 'results after normalization: ', results
+
+    
+    return results
+
+
+def classify_instance(probabilities, instance, class_probabilities):
+    results = {}
+    
+    results['p'] = calculate_probability(probabilities, instance, 'p', class_probabilities)
+    results['e'] = calculate_probability(probabilities, instance, 'e', class_probabilities)
+    
+    results = normalize(results)
+    if results['p'] > results['e']:
+        return ('p', results['p'])
+    else:
+        return ('e', results['e'])
+    
+
+
+def get_class_probabilities(p_count, e_count):
+    class_probabilities = {}
+    p_count = p_count - 1.0
+    e_count = e_count - 1.0
+    total = p_count + e_count
+    
+    class_probabilities['p'] = p_count / total
+    class_probabilities['e'] = e_count / total
+    
+    return class_probabilities
+
 
 #Returns a list of tuples: each is a class and the normalized probability of that class
 #sorted in descending order
 #[("e", 0.98), ("p", 0.02)]
 def classify(probabilities, instances):
-    pass
+    classifications = []
+    p_count, e_count = get_class_label_counts(data)
+    class_probabilities = get_class_probabilities(p_count, e_count)
+    print 'class_probabilities', class_probabilities
+    classify_instance(probabilities, instances[0], class_probabilities)
+    
+    #for instance in instances:
+    #    classifications.append(classify_instance(probabilities, instance, class_probabilities))
+    
+    return sorted(classifications, key = lambda x: x[1])
     
 
 #Uses the error rate    
@@ -86,9 +153,10 @@ def evaluate():
 
 
 data = read_csv('agaricus-lepiota.data')
-learn(data)
+probabilities = learn(data)
 
-
+classifications = classify(probabilities, data) #TODO use test data
+#pp.pprint(classifications)
 
 
 
