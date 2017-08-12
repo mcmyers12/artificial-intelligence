@@ -83,24 +83,14 @@ def calculate_probability(probabilities, instance, label, class_probabilities):
         
     probability *= class_probabilities[label]
     
-    print 'probability: '
-    print '\tinstance: ', instance
-    print '\tlabel: ', label    
-    print '\tprobability: ', probability
-
     return probability
 
 
 def normalize(results):
     denominator = results['p'] + results['e']
     
-    print 'results before normalization: ', results
-
     results['p'] = results['p'] / denominator
     results['e'] = results['e'] / denominator
-
-    print 'results after normalization: ', results
-
     
     return results
 
@@ -138,11 +128,9 @@ def classify(probabilities, instances):
     classifications = []
     p_count, e_count = get_class_label_counts(data)
     class_probabilities = get_class_probabilities(p_count, e_count)
-    print 'class_probabilities', class_probabilities
-    classify_instance(probabilities, instances[0], class_probabilities)
-    
-    #for instance in instances:
-    #    classifications.append(classify_instance(probabilities, instance, class_probabilities))
+
+    for instance in instances:
+        classifications.append(classify_instance(probabilities, instance, class_probabilities))
     
     return sorted(classifications, key = lambda x: x[1])
     
@@ -156,7 +144,7 @@ data = read_csv('agaricus-lepiota.data')
 probabilities = learn(data)
 
 classifications = classify(probabilities, data) #TODO use test data
-#pp.pprint(classifications)
+pp.pprint(classifications)
 
 
 
