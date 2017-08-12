@@ -30,8 +30,6 @@ def get_class_label_counts(data):
         elif row[0] == 'e':
             e_count += 1.0
     
-    print
-    print 'p_count', p_count, 'e_count', e_count
     return p_count, e_count
     
 
@@ -53,16 +51,7 @@ def get_probability_counts(data):
                     probability_counts[i][attribute_value]['p'] += 1.0
                 elif row[0] == 'e':
                     probability_counts[i][attribute_value]['e'] += 1.0
-                else:
-                    print 'not p or e'
-                    print
-                    print 
-                    row[0]
-                    print
-                    print
-                    print
-    
-    pp.pprint(probability_counts)            
+                
     return probability_counts
 
 
@@ -89,7 +78,6 @@ def learn(data):
             probabilities[attribute_index][attribute_value]['p'] = probabilities[attribute_index][attribute_value]['p'] / p_count
             probabilities[attribute_index][attribute_value]['e'] = probabilities[attribute_index][attribute_value]['e'] / e_count
     
-    pp.pprint(probabilities)
     return probabilities
 
 
@@ -127,9 +115,9 @@ def classify_instance(probabilities, instance, class_probabilities):
     
     results = normalize(results)
     if results['p'] > results['e']:
-        return ('p', results['p'])
+        return [('p', results['p']), ('e', results['e'])]
     else:
-        return ('e', results['e'])
+        return [('e', results['e']), ('p', results['p'])]
     
 
 #Returns a list of tuples: each is a class and the normalized probability of that class
@@ -143,7 +131,6 @@ def classify(probabilities, instances):
     for instance in instances:
         classifications.append(classify_instance(probabilities, instance, class_probabilities))
     
-    #return sorted(classifications, key = lambda x: x[1])
     return classifications
 
 
@@ -151,11 +138,9 @@ def classify(probabilities, instances):
 def evaluate(data, classifications):
     errors = 0.0
     for i in range(len(data)):
-        if classifications[i][0] != data[i][0]:
+        if classifications[i][0][0] != data[i][0]:
             errors += 1
     
-    print 'errors ', errors
-    print 'len(data) ', len(data)  
     error_rate = errors / len(data)
     return error_rate
 
@@ -167,8 +152,8 @@ set1, set2 = create_train_test_sets(data)
 probabilities = learn(set1)
 classifications = classify(probabilities, set2) 
 
-error_rate = evaluate(set2, classifications)
-print 'error_rate ', error_rate
+error_rate1 = evaluate(set2, classifications)
+print 'error_rate ', error_rate1
 print
 print
 print
@@ -176,11 +161,13 @@ print
 probabilities = learn(set2)
 classifications = classify(probabilities, set1) 
 
-error_rate = evaluate(set1, classifications)
-print 'error_rate ', error_rate
+error_rate2 = evaluate(set1, classifications)
+print 'error_rate ', error_rate2
 print
 print
 print
+
+print (error_rate1 + error_rate2) / 2
 
 
 
