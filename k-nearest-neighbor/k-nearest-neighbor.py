@@ -1,4 +1,5 @@
 import csv
+import math
 import random
 import pprint
 
@@ -143,10 +144,22 @@ def calculate_mean_squared_error(actuals, predictions):
     
     mse = mse / num_observations
     return mse
+
+
+def calculate_standard_deviation(mean, values):
+    print 'mse_values', values
+    standard_deviation = 0.0
+    for value in values:
+        standard_deviation += (value - mean) ** 2
+    
+    standard_deviation /= len(values)
+    standard_deviation = math.sqrt(standard_deviation)
+    return standard_deviation
     
  
 def cross_validation(data, k):
-    all_mse = 0.0
+    average_mse = 0.0
+    mse_values = []
     num_folds = 10
     folds = create_folds(data, num_folds)
     
@@ -175,9 +188,14 @@ def cross_validation(data, k):
         print 'mse', mse
         print
         
-        all_mse += mse
+        average_mse += mse
+        mse_values.append(mse)
     
-    print "Mean MSE: ", all_mse / num_folds
+    average_mse = average_mse / num_folds
+    standard_deviation = calculate_standard_deviation(average_mse, mse_values)
+    
+    print "Average MSE: ", average_mse
+    print "Standard Deviation: ", standard_deviation
 
 
 
