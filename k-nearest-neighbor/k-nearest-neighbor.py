@@ -64,7 +64,19 @@ def k_nearest_neighbors(data, k, instances):
     return predictions
     
 
+
+def create_train_test_sets(data):
+    random.shuffle(data)
+    split_point = len(data) / 3
+    test_set = data[:split_point]
+    train_set = data[split_point:]
+    
+    return train_set, test_set
+    
+
 data = read_csv('concrete-data.csv')
+train_set, test_set = create_train_test_sets(data)
+
 random.shuffle(data)
 instances = data[:10]
 predictions = k_nearest_neighbors(data, 10, instances)
