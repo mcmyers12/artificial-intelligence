@@ -319,7 +319,7 @@ generate_learning_curves(data, 6)
 
 '''average_mse, standard_deviation = cross_validation(data, 10)
 print "Average MSE: ", average_mse
-print "Standard Deviation: ", standard_deviation'''
+print "Standard Deviation: ", standard_deviation''' 
 
 
 
